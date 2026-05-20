@@ -1,62 +1,355 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Demand</title>
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GBFoods · Demand</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #181c27;
+      --border: rgba(255,255,255,0.07);
+      --accent: #e8b84b;
+      --accent2: #5b8fff;
+      --accent3: #4ecba0;
+      --text: #f0f0f0;
+      --muted: #7a7f91;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      font-family: Arial;
-      background:#f5f6fa;
-      padding:20px;
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
     }
 
-    h1 {
-      margin-bottom:20px;
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 20% 10%, rgba(91,143,255,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 80%, rgba(232,184,75,0.06) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
     }
 
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 60px 32px 80px;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 64px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo-mark {
+      width: 42px;
+      height: 42px;
+      background: var(--accent);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Playfair Display', serif;
+      font-weight: 700;
+      font-size: 18px;
+      color: #0f1117;
+      flex-shrink: 0;
+    }
+
+    .header-text h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .header-text p {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 300;
+      letter-spacing: 0.5px;
+      margin-top: 2px;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s;
+      padding: 8px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    .back-link:hover { color: var(--text); border-color: rgba(255,255,255,0.15); }
+
+    /* Hero */
+    .hero { margin-bottom: 56px; }
+
+    .hero-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--accent2);
+      margin-bottom: 16px;
+    }
+
+    .hero-label::before {
+      content: '';
+      display: block;
+      width: 20px;
+      height: 1px;
+      background: var(--accent2);
+    }
+
+    .hero h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(32px, 4.5vw, 52px);
+      font-weight: 400;
+      line-height: 1.15;
+      color: var(--text);
+      max-width: 520px;
+    }
+
+    .hero h2 em {
+      font-style: italic;
+      color: var(--accent2);
+    }
+
+    /* Grid */
     .grid {
-      display:grid;
-      grid-template-columns:repeat(auto-fill, minmax(250px,1fr));
-      gap:20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    /* Cards */
+    .card {
+      position: relative;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px 28px 28px;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow: hidden;
+      transition: border-color 0.3s, transform 0.3s;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      border-radius: 16px 16px 0 0;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .card:hover {
+      border-color: rgba(255,255,255,0.15);
+      transform: translateY(-4px);
+    }
+
+    .card:hover::before { opacity: 1; }
+
+    .card--dmr::before     { background: linear-gradient(90deg, var(--accent2), #a78bff); }
+    .card--pareto::before  { background: linear-gradient(90deg, var(--accent3), #2db8ff); }
+
+    .card--dmr .card-icon   { background: rgba(91,143,255,0.12); color: var(--accent2); }
+    .card--pareto .card-icon { background: rgba(78,203,160,0.12); color: var(--accent3); }
+
+    .card-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 4px;
+    }
+
+    .card-icon svg { width: 22px; height: 22px; }
+
+    .card-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .card-desc {
+      font-size: 14px;
+      color: var(--muted);
+      font-weight: 300;
+      line-height: 1.5;
+      flex-grow: 1;
+    }
+
+    .card-tag {
+      display: inline-flex;
+      align-items: center;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 20px;
+      width: fit-content;
+    }
+
+    .card--dmr .card-tag   { background: rgba(91,143,255,0.1); color: var(--accent2); }
+    .card--pareto .card-tag { background: rgba(78,203,160,0.1); color: var(--accent3); }
+
+    .card-arrow {
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+      transition: color 0.2s, gap 0.2s;
+    }
+
+    .card:hover .card-arrow { color: var(--text); gap: 10px; }
+
+    /* Footer */
+    footer {
+      margin-top: 72px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    footer p { font-size: 12px; color: var(--muted); }
+
+    .status-dot {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--accent3);
+    }
+
+    .status-dot::before {
+      content: '';
+      display: block;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent3);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
     }
 
     .card {
-      background:white;
-      padding:20px;
-      border-radius:10px;
-      box-shadow:0 4px 10px rgba(0,0,0,0.1);
+      opacity: 0;
+      animation: fadeUp 0.5s forwards;
     }
+    .card:nth-child(1) { animation-delay: 0.1s; }
+    .card:nth-child(2) { animation-delay: 0.2s; }
 
-    a {
-      text-decoration:none;
-      color:black;
-    }
-
-    .back {
-      margin-top:30px;
-      display:block;
-      color:blue;
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
   </style>
 </head>
-
 <body>
+<div class="container">
 
-<h1>Demand Dashboards</h1>
+  <header>
+    <div class="header-left">
+      <div class="logo-mark">GB</div>
+      <div class="header-text">
+        <h1>GBFoods</h1>
+        <p>Operations Intelligence Platform</p>
+      </div>
+    </div>
+    <a class="back-link" href="../../index.html">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Operations Hub
+    </a>
+  </header>
 
-<div class="grid">
+  <section class="hero">
+    <div class="hero-label">Demand</div>
+    <h2>Forecast & <em>planning</em> tools</h2>
+  </section>
 
-apps/demand/forecast/index.html
-  <div class="card">Forecast Dashboard</div>
-</a>
+  <div class="grid">
 
-apps/demand/accuracy/index.html
-  <div class="card">Accuracy Dashboard</div>
-</a>
+    <a class="card card--dmr" href="../../apps/DMR meeting tool - Nigeria">
+      <div class="card-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+      </div>
+      <div class="card-tag">Nigeria</div>
+      <div class="card-title">DMR Meeting Tool</div>
+      <div class="card-desc">Daily Management Review meeting dashboard for Nigeria operations tracking and decision support.</div>
+      <div class="card-arrow">Open dashboard <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+    </a>
+
+    <a class="card card--pareto" href="../../apps/Pareto Analysis Africa">
+      <div class="card-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 3v18h18"/><rect x="7" y="10" width="3" height="8"/><rect x="12" y="6" width="3" height="12"/><rect x="17" y="13" width="3" height="5"/><path d="M7 8l5-3 5 4" stroke-dasharray="2 2"/>
+        </svg>
+      </div>
+      <div class="card-tag">Africa</div>
+      <div class="card-title">Pareto Analysis</div>
+      <div class="card-desc">80/20 analysis across GBFoods Africa portfolio — SKUs, customers, and markets by volume and value.</div>
+      <div class="card-arrow">Open dashboard <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+    </a>
+
+  </div>
+
+  <footer>
+    <p>© 2025 GBFoods · Demand Planning</p>
+    <span class="status-dot">All systems operational</span>
+  </footer>
 
 </div>
-
-index.htmlBack to Home</a>
-
 </body>
 </html>
+
