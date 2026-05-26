@@ -1130,13 +1130,9 @@ function adhocCardRow(t,k){
   const subTotal=(t.subtasks||[]).length;
   const commentCount=(t.comments||[]).length;
   const isDone=t.status==='done';
-  // If no subtasks: show checkbox for one-click complete; else open detail modal
-  const cardClick = subTotal===0
-    ? `event.stopPropagation();toggleADone('${t.id}')`
-    : `switchToListAndExpand('${t.id}')`;
-  const checkBox = subTotal===0
-    ? `<div class="t-checkbox${isDone?' done':''}" onclick="event.stopPropagation();toggleADone('${t.id}')" style="flex-shrink:0;margin-top:1px;width:16px;height:16px">${isDone?'✓':''}</div>`
-    : '';
+  // Always open detail modal on card click; checkbox handles done toggle
+  const cardClick = `switchToListAndExpand('${t.id}')`;
+  const checkBox = `<div class="t-checkbox${isDone?' done':''}" onclick="event.stopPropagation();toggleADone('${t.id}')" style="flex-shrink:0;margin-top:1px;width:16px;height:16px;cursor:pointer" title="${isDone?'Mark incomplete':'Mark complete'}">${isDone?'✓':''}</div>`;
   return `<div style="background:var(--bg);border-radius:var(--radius-sm);padding:8px 10px;margin-bottom:6px;border-left:3px solid ${BU_COLOR[k]};cursor:pointer" onclick="${cardClick}">
     <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:5px">
       ${checkBox}
