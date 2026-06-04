@@ -435,28 +435,28 @@ function refreshDropdowns(){
   const sT={};R.filter(r=>(CBU.length===0||CBU.includes(r[9]))&&ccMatch(r[2])&&moMatch(r[1])&&sfMatch(r[7])&&brMatch(r[8])&&skuMatch(r[3])).forEach(r=>{sT[r[4]]=(sT[r[4]]||0)+r[mf];});
   const vS=Object.entries(sT).filter(([,v])=>v>0).map(([k])=>k).sort();
   const activeCS=CS.filter(v=>vS.includes(v));
-  buildMsd('msd-sg-drop','msd-sg-btn',vS,activeCS,vals=>{CS=vals;const b=document.getElementById('msd-sg-btn');b.textContent=msdLabel(vals,'All Segments');b.classList.toggle('active',vals.length>0);refreshDropdowns();draw();});
+  buildMsd('msd-sg-drop','msd-sg-btn',vS,activeCS,vals=>{CS=vals;const b=document.getElementById('msd-sg-btn');b.textContent=msdLabel(vals,'All Segments');b.classList.toggle('active',vals.length>0);CSF=[];CBR=[];CSK=[];refreshDropdowns();draw();});
   const sgBtn=document.getElementById('msd-sg-btn');sgBtn.textContent=msdLabel(CS,'All Segments');sgBtn.classList.toggle('active',CS.length>0);
 
   // Sub Family dropdown
   const sfT={};R.filter(r=>(CBU.length===0||CBU.includes(r[9]))&&(CS.length===0||CS.includes(r[4]))&&ccMatch(r[2])&&moMatch(r[1])&&brMatch(r[8])&&skuMatch(r[3])).forEach(r=>{sfT[r[7]]=(sfT[r[7]]||0)+r[mf];});
   const vSF=Object.entries(sfT).filter(([,v])=>v>0).map(([k])=>k).sort();
   const activeSF=CSF.filter(v=>vSF.includes(v));
-  buildMsd('msd-sf-drop','msd-sf-btn',vSF,activeSF,vals=>{CSF=vals;const b=document.getElementById('msd-sf-btn');b.textContent=msdLabel(vals,'All Sub Families');b.classList.toggle('active',vals.length>0);refreshDropdowns();draw();});
+  buildMsd('msd-sf-drop','msd-sf-btn',vSF,activeSF,vals=>{CSF=vals;const b=document.getElementById('msd-sf-btn');b.textContent=msdLabel(vals,'All Sub Families');b.classList.toggle('active',vals.length>0);CSK=[];refreshDropdowns();draw();});
   const sfBtn=document.getElementById('msd-sf-btn');sfBtn.textContent=msdLabel(CSF,'All Sub Families');sfBtn.classList.toggle('active',CSF.length>0);
 
   // Brand dropdown
   const brT={};R.filter(r=>(CBU.length===0||CBU.includes(r[9]))&&(CS.length===0||CS.includes(r[4]))&&ccMatch(r[2])&&moMatch(r[1])&&sfMatch(r[7])&&skuMatch(r[3])).forEach(r=>{brT[r[8]]=(brT[r[8]]||0)+r[mf];});
   const vBR=Object.entries(brT).filter(([,v])=>v>0).map(([k])=>k).sort();
   const activeBR=CBR.filter(v=>vBR.includes(v));
-  buildMsd('msd-br-drop','msd-br-btn',vBR,activeBR,vals=>{CBR=vals;const b=document.getElementById('msd-br-btn');b.textContent=msdLabel(vals,'All Brands');b.classList.toggle('active',vals.length>0);refreshDropdowns();draw();});
+  buildMsd('msd-br-drop','msd-br-btn',vBR,activeBR,vals=>{CBR=vals;const b=document.getElementById('msd-br-btn');b.textContent=msdLabel(vals,'All Brands');b.classList.toggle('active',vals.length>0);CSK=[];refreshDropdowns();draw();});
   const brBtn=document.getElementById('msd-br-btn');brBtn.textContent=msdLabel(CBR,'All Brands');brBtn.classList.toggle('active',CBR.length>0);
 
-  // DFU (SKU) dropdown — DFUs active given current BU/country/segment/month filters
-  const skT={};R.filter(r=>(CBU.length===0||CBU.includes(r[9]))&&(CS.length===0||CS.includes(r[4]))&&ccMatch(r[2])&&moMatch(r[1])&&brMatch(r[8])).forEach(r=>{const dfu=dfuSku(r[3]);skT[dfu]=(skT[dfu]||0)+r[mf];});
+  // SKU dropdown — respects all upstream filters
+  const skT={};R.filter(r=>(CBU.length===0||CBU.includes(r[9]))&&(CS.length===0||CS.includes(r[4]))&&ccMatch(r[2])&&moMatch(r[1])&&sfMatch(r[7])&&brMatch(r[8])).forEach(r=>{const dfu=dfuSku(r[3]);skT[dfu]=(skT[dfu]||0)+r[mf];});
   const vSK=Object.entries(skT).filter(([,v])=>v>0).map(([k])=>k).sort();
   const activeSK=CSK.filter(v=>vSK.includes(v));
-  buildMsd('msd-sk-drop','msd-sk-btn',vSK,activeSK,vals=>{CSK=vals;const b=document.getElementById('msd-sk-btn');b.textContent=msdLabel(vals,'All SKUs');b.classList.toggle('active',vals.length>0);draw();});
+  buildMsd('msd-sk-drop','msd-sk-btn',vSK,activeSK,vals=>{CSK=vals;const b=document.getElementById('msd-sk-btn');b.textContent=msdLabel(vals,'All SKUs');b.classList.toggle('active',vals.length>0);refreshDropdowns();draw();});
   const skBtn=document.getElementById('msd-sk-btn');skBtn.textContent=msdLabel(CSK,'All SKUs');skBtn.classList.toggle('active',CSK.length>0);
 
   const MNAMES=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
