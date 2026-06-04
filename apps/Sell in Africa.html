@@ -374,7 +374,7 @@ function fmv(n){return CM==='vol'?fmt(n):fmtNS(n);}
 function el(id,txt){const e=document.getElementById(id);if(e)e.textContent=txt;}
 function filt(){return R.filter(r=>(CBU.length===0||CBU.includes(r[9]))&&(CS.length===0||CS.includes(r[4]))&&(r[0]>=CYF&&r[0]<=CYT)&&ccMatch(r[2])&&moMatch(r[1])&&sfMatch(r[7])&&brMatch(r[8])&&skuMatch(r[3]));}
 function mkChart(id,cfg){if(CH[id]){CH[id].destroy();delete CH[id];}const e=document.getElementById(id);if(!e)return;CH[id]=new Chart(e.getContext('2d'),cfg);}
-function pivotKey(r,p){return p==='bu'?r[9]:p==='segment'?r[4]:p==='subbrand'?r[8]:p==='subfamily'?r[7]:p==='brand'?r[8]:p==='sku'?(SKU_MAP[r[3]]||r[3]):dispCountry(r[2],r[9]);}
+function pivotKey(r,p){return p==='bu'?r[9]:p==='segment'?r[4]:p==='subbrand'?r[8]:p==='subfamily'?r[7]:p==='brand'?r[8]:p==='sku'?dfuSku(r[3]):dispCountry(r[2],r[9]);}
 function pivotLabel(p){return p==='bu'?'Business Unit':p==='segment'?'Segment':p==='subbrand'?'Sub Brand':p==='subfamily'?'Sub Family':p==='brand'?'Brand':p==='sku'?'SKU':'Country';}
 
 function goTab(t){
@@ -453,7 +453,7 @@ function refreshDropdowns(){
   const brBtn=document.getElementById('msd-br-btn');brBtn.textContent=msdLabel(CBR,'All Brands');brBtn.classList.toggle('active',CBR.length>0);
 
   // DFU (SKU) dropdown — DFUs active given current BU/country/segment/month filters
-  const skT={};R.filter(r=>(CBU.length===0||CBU.includes(r[9]))&&(CS.length===0||CS.includes(r[4]))&&ccMatch(r[2])&&moMatch(r[1])&&brMatch(r[8])).forEach(r=>{const dfu=SKU_MAP[r[3]]||r[3];skT[dfu]=(skT[dfu]||0)+r[mf];});
+  const skT={};R.filter(r=>(CBU.length===0||CBU.includes(r[9]))&&(CS.length===0||CS.includes(r[4]))&&ccMatch(r[2])&&moMatch(r[1])&&brMatch(r[8])).forEach(r=>{const dfu=dfuSku(r[3]);skT[dfu]=(skT[dfu]||0)+r[mf];});
   const vSK=Object.entries(skT).filter(([,v])=>v>0).map(([k])=>k).sort();
   const activeSK=CSK.filter(v=>vSK.includes(v));
   buildMsd('msd-sk-drop','msd-sk-btn',vSK,activeSK,vals=>{CSK=vals;const b=document.getElementById('msd-sk-btn');b.textContent=msdLabel(vals,'All SKUs');b.classList.toggle('active',vals.length>0);draw();});
@@ -469,7 +469,7 @@ function populateSkuSelect(selId){
   const mf=CM==='vol'?5:6;
   const sel=document.getElementById(selId); if(!sel)return;
   const cur=sel.value;
-  const skT={};R.filter(r=>(CBU.length===0||CBU.includes(r[9]))&&(CS.length===0||CS.includes(r[4]))&&ccMatch(r[2])&&moMatch(r[1])&&brMatch(r[8])).forEach(r=>{const dfu=SKU_MAP[r[3]]||r[3];skT[dfu]=(skT[dfu]||0)+r[mf];});
+  const skT={};R.filter(r=>(CBU.length===0||CBU.includes(r[9]))&&(CS.length===0||CS.includes(r[4]))&&ccMatch(r[2])&&moMatch(r[1])&&brMatch(r[8])).forEach(r=>{const dfu=dfuSku(r[3]);skT[dfu]=(skT[dfu]||0)+r[mf];});
   const items=Object.entries(skT).filter(([,v])=>v>0).map(([k])=>k).sort();
   sel.innerHTML='<option value="">All SKUs</option>'+items.map(v=>'<option value="'+v+'"'+(v===cur?' selected':'')+'>'+v+'</option>').join('');
 }
@@ -477,7 +477,7 @@ function populateSkuSelect(selId){
   const mf=CM==='vol'?5:6;
   const sel=document.getElementById(selId); if(!sel)return;
   const cur=sel.value;
-  const skT={};R.filter(r=>(CBU.length===0||CBU.includes(r[9]))&&(CS.length===0||CS.includes(r[4]))&&ccMatch(r[2])&&moMatch(r[1])&&brMatch(r[8])).forEach(r=>{const dfu=SKU_MAP[r[3]]||r[3];skT[dfu]=(skT[dfu]||0)+r[mf];});
+  const skT={};R.filter(r=>(CBU.length===0||CBU.includes(r[9]))&&(CS.length===0||CS.includes(r[4]))&&ccMatch(r[2])&&moMatch(r[1])&&brMatch(r[8])).forEach(r=>{const dfu=dfuSku(r[3]);skT[dfu]=(skT[dfu]||0)+r[mf];});
   const items=Object.entries(skT).filter(([,v])=>v>0).map(([k])=>k).sort();
   sel.innerHTML='<option value="">All SKUs</option>'+items.map(v=>'<option value="'+v+'"'+(v===cur?' selected':'')+'>'+v+'</option>').join('');
 }
@@ -612,10 +612,10 @@ function drawOverview(){
   // Step 1: full BU 2026 data — only BU + Country filters, no Segment/SF/Brand/SKU
   const abcBuData=R.filter(r=>r[0]===2026&&(CBU.length===0||CBU.includes(r[9])));
   const prevDFUs=new Set();
-  R.filter(r=>r[0]<2026&&(CBU.length===0||CBU.includes(r[9]))).forEach(r=>{if(r[6]!==0)prevDFUs.add(SKU_MAP[r[3]]||r[3]);});
+  R.filter(r=>r[0]<2026&&(CBU.length===0||CBU.includes(r[9]))).forEach(r=>{if(r[6]!==0)prevDFUs.add(dfuSku(r[3]));});
   // Build global ABC ranking on full BU
   const buMap={};
-  abcBuData.forEach(r=>{const dfu=SKU_MAP[r[3]]||r[3];buMap[dfu]=(buMap[dfu]||0)+r[6];});
+  abcBuData.forEach(r=>{const dfu=dfuSku(r[3]);buMap[dfu]=(buMap[dfu]||0)+r[6];});
 
   // Fix: separate existing vs new first, then classify existing
   const buExisting=Object.entries(buMap).filter(([k,v])=>v>0&&prevDFUs.has(k)).sort((a,b)=>b[1]-a[1]);
@@ -629,7 +629,7 @@ function drawOverview(){
   const abcFiltered=R.filter(r=>r[0]===2026&&(CBU.length===0||CBU.includes(r[9]))&&(CS.length===0||CS.includes(r[4]))&&ccMatch(r[2])&&moMatch(r[1])&&sfMatch(r[7])&&brMatch(r[8])&&skuMatch(r[3]));
   const filtMap={};const abcGmNS={};const abcGmAmt={};
   abcFiltered.forEach(r=>{
-    const dfu=SKU_MAP[r[3]]||r[3];
+    const dfu=dfuSku(r[3]);
     filtMap[dfu]=(filtMap[dfu]||0)+r[6];
     const gm=getGM(r[3],r[9]);
     if(gm!==null){abcGmNS[dfu]=(abcGmNS[dfu]||0)+r[6];abcGmAmt[dfu]=(abcGmAmt[dfu]||0)+r[6]*gm;}
@@ -792,13 +792,11 @@ function draw80(){
   const map={};const metaMap={};const gmNS={};const gmAmt={};
   // Build set of DFU keys that have sales in prior years (not new launches) — scoped to BU only
   const prevYearDFUs=new Set();
-  R.filter(r=>r[0]<CPY&&(CBU.length===0||CBU.includes(r[9]))).forEach(r=>{if(r[6]!==0)prevYearDFUs.add(dfuSku(r[3]));});
+  R.filter(r=>r[0]<2026&&(CBU.length===0||CBU.includes(r[9]))).forEach(r=>{if(r[6]!==0)prevYearDFUs.add(dfuSku(r[3]));});
 
   // ABC ranking built on full BU scope (BU+Country only, no category filters) — SKU pivot only
   // For non-SKU pivots the ranking is naturally on the filtered data (segment/brand/sf are the pivot itself)
-  const buScopeData=pp==='sku'
-    ? R.filter(r=>r[0]===CPY&&periodFilter(r)&&(CBU.length===0||CBU.includes(r[9])))
-    : data;
+  const buScopeData=R.filter(r=>r[0]===2026&&(CBU.length===0||CBU.includes(r[9])));
   const buMap={};
   buScopeData.forEach(r=>{
     const key=pp==='segment'?r[4]:pp==='subbrand'?r[8]:pp==='subfamily'?r[7]:dfuSku(r[3]);
