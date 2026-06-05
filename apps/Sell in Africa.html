@@ -362,7 +362,7 @@ Chart.register({id:'cagrLabels',afterDraw(chart){
   ctx.restore();
 }});
 
-let CYF=2023,CYT=2026,CS=[],CT='overview',CM='ns',CC=[],CBU=[],CPY=2026,CMO=[],CSK=[],CBR=[],CSF=[];
+let CYF=2023,CYT=2026,CS=[],CT='overview',CM='ns',CC=[],CBU=[],CPY=2026,CMO=[],CSK=[],CBR=[],CSF=[],selMos=[];
 const CH={};
 
 function fmt(n){n=Math.round(n);return n>=1e6?(n/1e6).toFixed(2)+'M':n>=1e3?(n/1e3).toFixed(1)+'K':''+n}
@@ -372,7 +372,7 @@ function fmv0(n){return CM==='vol'?fmt0(n):fmt0(n);}
 function mv(r){return CM==='vol'?r[5]:r[6];}
 function fmv(n){return CM==='vol'?fmt(n):fmtNS(n);}
 function el(id,txt){const e=document.getElementById(id);if(e)e.textContent=txt;}
-function filt(){return R.filter(r=>(CBU.length===0||CBU.includes(r[9]))&&(CS.length===0||CS.includes(r[4]))&&(r[0]>=CYF&&r[0]<=CYT)&&ccMatch(r[2])&&moMatch(r[1])&&sfMatch(r[7])&&brMatch(r[8])&&skuMatch(r[3]));}
+function filt(){return R.filter(r=>(CBU.length===0||CBU.includes(r[9]))&&(CS.length===0||CS.includes(r[4]))&&(r[0]>=CYF&&r[0]<=CYT)&&ccMatch(r[2])&&moMatch(r[1])&&sfMatch(r[7])&&brMatch(r[8])&&skuMatch(r[3])&&(selMos.length===0||selMos.includes(r[1])));}
 function mkChart(id,cfg){if(CH[id]){CH[id].destroy();delete CH[id];}const e=document.getElementById(id);if(!e)return;CH[id]=new Chart(e.getContext('2d'),cfg);}
 function pivotKey(r,p){return p==='bu'?r[9]:p==='segment'?r[4]:p==='subbrand'?r[8]:p==='subfamily'?r[7]:p==='brand'?r[8]:p==='sku'?(dfuSku(r[3])):dispCountry(r[2],r[9]);}
 function pivotLabel(p){return p==='bu'?'Business Unit':p==='segment'?'Segment':p==='subbrand'?'Sub Brand':p==='subfamily'?'Sub Family':p==='brand'?'Brand':p==='sku'?'SKU':'Country';}
@@ -496,6 +496,12 @@ function setParetoYear(v){CPY=+v;draw80();}
 function setMetric(m,btn){CM=m;document.querySelectorAll('#m-vol,#m-ns').forEach(b=>b.classList.remove('on'));btn.classList.add('on');draw();}
 function setYearRange(){const f=+document.getElementById('selYearFrom').value,t=+document.getElementById('selYearTo').value;CYF=Math.min(f,t);CYT=Math.max(f,t);draw();}
 
+function toggleSelMo(mo){
+  const idx=selMos.indexOf(mo);
+  if(idx>=0) selMos.splice(idx,1);
+  else selMos.push(mo);
+  drawOverview();
+}
 function draw(){
   if(CT==='overview')drawOverview();
   else draw80();
@@ -534,6 +540,7 @@ function drawOverview(){
   const tYrs=[2023,2024,2025,2026].filter(y=>y>=CYF&&y<=CYT);
   const lastYr=tYrs[tYrs.length-1];
   const hasBgt=R.some(r=>r[0]===2027&&kf(r));
+
   const legHtml=`<span style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:2px">`+tYrs.map(y=>{
     const lbl2=y===2026?'2026 LE':''+y;
     const icon=y===2026
@@ -545,8 +552,10 @@ function drawOverview(){
   const tsTrendEl=document.getElementById('ts-trend');if(tsTrendEl)tsTrendEl.innerHTML=legHtml;
 
   // Monthly trend: 2023-2025 as lines with points, 2026 as bars
-  const byYM={};data.forEach(r=>{const k=r[0]+'-'+r[1];byYM[k]=(byYM[k]||0)+mv(r);});
-  const bgtData=R.filter(r=>r[0]===2027&&kf(r));
+  // Trend uses all months (ignores selMos); other charts use filt() which respects selMos
+  const trendData=R.filter(r=>(CBU.length===0||CBU.includes(r[9]))&&(CS.length===0||CS.includes(r[4]))&&(r[0]>=CYF&&r[0]<=CYT)&&ccMatch(r[2])&&moMatch(r[1])&&sfMatch(r[7])&&brMatch(r[8])&&skuMatch(r[3]));
+  const byYM={};trendData.forEach(r=>{const k=r[0]+'-'+r[1];byYM[k]=(byYM[k]||0)+mv(r);});
+  const bgtData=R.filter(r=>r[0]===2027&&(CBU.length===0||CBU.includes(r[9]))&&(CS.length===0||CS.includes(r[4]))&&ccMatch(r[2])&&sfMatch(r[7])&&brMatch(r[8])&&skuMatch(r[3]));
   const byYMbgt={};bgtData.forEach(r=>{const k='bgt-'+r[1];byYMbgt[k]=(byYMbgt[k]||0)+mv(r);});
   const trendDatasets=[];
   tYrs.forEach(y=>{
@@ -558,27 +567,69 @@ function drawOverview(){
   });
   const bgtMonthly=MN.map((_,i)=>Math.round(byYMbgt['bgt-'+(i+1)]||0));
   if(hasBgt){trendDatasets.push({type:'line',label:'2026P',data:bgtMonthly,borderColor:'#1e40af',backgroundColor:'transparent',borderWidth:2,borderDash:[5,4],fill:false,tension:.3,pointRadius:2,pointHoverRadius:4,pointBackgroundColor:'#1e40af'});}
-  mkChart('cTrend',{type:'bar',data:{labels:MN,datasets:trendDatasets},
+  const trendHighlightPlugin={id:'trendHL',afterDraw(chart){
+    try{
+      if(!selMos.length)return;
+      const ctx=chart.ctx,xAxis=chart.scales.x;
+      if(!xAxis||!chart.chartArea)return;
+      const n=xAxis.ticks.length; if(!n)return;
+      const colW=chart.chartArea.width/n;
+      ctx.save();
+      selMos.forEach(mo=>{
+        const i=mo-1;
+        const x=xAxis.getPixelForTick(i);
+        // column highlight
+        ctx.fillStyle='rgba(37,105,195,0.10)';
+        ctx.fillRect(x-colW/2,chart.chartArea.top,colW,chart.chartArea.bottom-chart.chartArea.top);
+        // blue label
+        ctx.fillStyle='#2569c3';
+        ctx.font='bold 11px system-ui,sans-serif';
+        ctx.textAlign='center';
+        ctx.textBaseline='top';
+        ctx.fillText(MN[i],x,xAxis.bottom+2);
+      });
+      ctx.restore();
+    }catch(e){}
+  }};
+  mkChart('cTrend',{type:'bar',data:{labels:MN,datasets:trendDatasets},plugins:[trendHighlightPlugin],
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+
       plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:c=>`  ${c.dataset.label}: ${fmt(c.raw)}`}},datalabels:{display:false}},
       scales:{x:{grid:{display:false},ticks:{color:'#5a6a7e',font:{size:11}},border:{display:false}},
         y:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{color:'#5a6a7e',font:{size:11},callback:v=>fmv(v)},border:{display:false}}}}});
 
+  // Click on trend chart to select/deselect months
+  const cTrendEl=document.getElementById('cTrend');
+  if(cTrendEl){
+    cTrendEl.onclick=null;
+    cTrendEl.onclick=function(e){
+      const chart=CH['cTrend'];
+      if(!chart)return;
+      const pts=chart.getElementsAtEventForMode(e,'index',{intersect:false},false);
+      if(!pts||!pts.length)return;
+      const mo=pts[0].index+1;
+      const i=selMos.indexOf(mo);
+      if(i>=0) selMos.splice(i,1); else selMos.push(mo);
+      drawOverview();
+    };
+  }
   drawDonut();
 
   // Year totals bar with data labels
   const wfYrs=[2023,2024,2025,2026].filter(y=>y>=CYF&&y<=CYT);
   const totals={};wfYrs.forEach(y=>totals[y]=0);
-  data.forEach(r=>{if(totals[r[0]]!==undefined)totals[r[0]]+=mv(r);});
-  const bgtTotal=R.filter(r=>r[0]===2027&&kf(r)).reduce((s,r)=>s+mv(r),0);
+  data.forEach(r=>{if(totals[r[0]]!==undefined&&(selMos.length===0||selMos.includes(r[1])))totals[r[0]]+=mv(r);});
+  const bgtTotal=R.filter(r=>r[0]===2027&&kf(r)&&(selMos.length===0||selMos.includes(r[1]))).reduce((s,r)=>s+mv(r),0);
   const wfCols={2023:tCols[2023]+'bb',2024:tCols[2024]+'bb',2025:tCols[2025]+'bb',2026:tCols[2026]+'bb'};
-  el('tt-cbar','Total '+M);el('ts-cbar',wfYrs.map(y=>y===2026?'2026 LE':''+y).join(' / '));
+  el('tt-cbar','Total '+M);el('ts-cbar',(selMos.length>0?MN.filter((_,i)=>selMos.includes(i+1)).join(', ')+' · ':'')+wfYrs.map(y=>y===2026?'2026 LE':''+y).join(' / '));
   const showBgt=bgtTotal>0&&CYT===2026;
   const cbarLabels=[...wfYrs.map(y=>y===2026?'2026 LE':''+y),...(showBgt?['2026P']:[])];
   const cbarData=[...wfYrs.map(y=>Math.round(totals[y])),...(showBgt?[Math.round(bgtTotal)]:[])];
   const cbarColors=[...wfYrs.map(y=>wfCols[y]),...(showBgt?['#2563eb99']:[])];
   const cbarYoyPlugin={id:'cbarYoy',afterDraw(chart){
+  try{
     const ctx=chart.ctx,ds=chart.data.datasets[0],meta=chart.getDatasetMeta(0);
+    if(!ds||!meta||!chart.chartArea)return;
     const vals=ds.data;
     const labels=chart.data.labels||[];
     ctx.save();
@@ -652,6 +703,7 @@ function drawOverview(){
       ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(label,midX,topY);
     });
     ctx.restore();
+  }catch(e){}
   }};
   mkChart('cCbar',{type:'bar',data:{labels:cbarLabels,datasets:[{
     data:cbarData,
@@ -715,7 +767,7 @@ function drawDonut(){
   const pivot=document.getElementById('sharedPivot')?.value||'segment';
   const lbl=pivotLabel(pivot);
   const byG={};
-  R.filter(r=>r[0]===CYT&&(CBU.length===0||CBU.includes(r[9]))&&(CS.length===0||CS.includes(r[4]))&&ccMatch(r[2])&&moMatch(r[1])&&sfMatch(r[7])&&brMatch(r[8])&&skuMatch(r[3])).forEach(r=>{const k=pivotKey(r,pivot);byG[k]=(byG[k]||0)+r[6];});
+  R.filter(r=>r[0]===CYT&&(CBU.length===0||CBU.includes(r[9]))&&(CS.length===0||CS.includes(r[4]))&&ccMatch(r[2])&&moMatch(r[1])&&sfMatch(r[7])&&brMatch(r[8])&&skuMatch(r[3])&&(selMos.length===0||selMos.includes(r[1]))).forEach(r=>{const k=pivotKey(r,pivot);byG[k]=(byG[k]||0)+r[6];});
   const sorted=Object.entries(byG).filter(e=>e[1]>0).sort((a,b)=>b[1]-a[1]);
   const top5=sorted.slice(0,5);
   const othersVal=sorted.slice(5).reduce((s,e)=>s+e[1],0);
@@ -733,7 +785,7 @@ function drawCAGR(){
   const pivot=document.getElementById('sharedPivot')?.value||'segment';
   const lbl=pivotLabel(pivot);const mf=CM==='vol'?5:6;
   const agg={};
-  R.filter(r=>(CBU.length===0||CBU.includes(r[9]))&&(CS.length===0||CS.includes(r[4]))&&ccMatch(r[2])&&moMatch(r[1])&&sfMatch(r[7])&&brMatch(r[8])&&skuMatch(r[3])).forEach(r=>{const key=pivotKey(r,pivot);if(!agg[key])agg[key]={};agg[key][r[0]]=(agg[key][r[0]]||0)+r[mf];});
+  R.filter(r=>(CBU.length===0||CBU.includes(r[9]))&&(CS.length===0||CS.includes(r[4]))&&ccMatch(r[2])&&moMatch(r[1])&&sfMatch(r[7])&&brMatch(r[8])&&skuMatch(r[3])&&(selMos.length===0||selMos.includes(r[1]))).forEach(r=>{const key=pivotKey(r,pivot);if(!agg[key])agg[key]={};agg[key][r[0]]=(agg[key][r[0]]||0)+r[mf];});
   const cagrData=Object.entries(agg).map(([k,v])=>{
     const vyf=v[CYF]||0,vyt=v[CYT]||0;
     if(vyf<=0||vyt<=0)return null;
@@ -811,6 +863,19 @@ function drawCountry(data){
       <td><div class="bw"><div class="bb"><div class="bf" style="width:${Math.min(sh*4,100)}%"></div></div><span style="color:var(--muted);min-width:36px">${sh.toFixed(1)}%</span></div></td>
       </tr>`;
   });
+  // Total row
+  const totByY={};years.forEach(y=>{totByY[y]=(CM==='ns'?Object.values(byK).reduce((s,v)=>s+(v[y]?.ns||0),0):Object.values(byK).reduce((s,v)=>s+(v[y]?.vol||0),0));});
+  const totLast=totByY[years[years.length-1]]||0;
+  const totFirst=totByY[years[0]]||0;
+  const totYspan=years.length-1||1;
+  const totCagr=totFirst>0&&totLast>0?+((Math.pow(totLast/totFirst,1/totYspan)-1)*100).toFixed(1):null;
+  const totCagrClr=totCagr===null?'var(--muted)':totCagr>=0?'#2dce89':'#f75c5c';
+  tb.innerHTML+=`<tr style="border-top:2px solid var(--border);font-weight:700;background:rgba(0,0,0,0.02)">
+    <td style="font-weight:700">TOTAL</td>
+    ${years.map(y=>`<td style="color:${yrCols[y]||'#5a6a7e'};font-weight:700">${fmt(totByY[y])}</td>`).join('')}
+    ${years.length>1?`<td style="color:${totCagrClr};font-weight:700">${totCagr===null?'—':(totCagr>=0?'+':'')+totCagr+'%'}</td>`:''}
+    <td><span style="color:var(--muted);font-weight:700">100%</span></td>
+    </tr>`;
 }
 
 function draw80(){
