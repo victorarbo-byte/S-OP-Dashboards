@@ -1,0 +1,65 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet"><title>GBFoods · Manufacturing</title>  <style>
+    :root {
+      --orange:#E8470A; --orange-light:#fff0ea; --orange-mid:#ffd5c0;
+      --dark:#3a3a3a; --gray:#666; --light-gray:#f4f4f4;
+      --border:#e0e0e0; --white:#fff;
+      --shadow:0 2px 12px rgba(232,71,10,0.08);
+      --shadow-hover:0 8px 32px rgba(232,71,10,0.18);
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:"Montserrat",Arial,sans-serif;background:var(--white);color:var(--dark);min-height:100vh}
+    nav{background:var(--white);border-bottom:2px solid var(--border);padding:0 48px;height:72px;display:flex;align-items:center;justify-content:space-between}
+    .logo img{height:65px;width:auto}
+    .back-link{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--orange);text-decoration:none;padding:6px 14px;border:2px solid var(--orange);border-radius:20px;transition:background .2s,color .2s}
+    .back-link:hover{background:var(--orange);color:var(--white)}
+    .hero-banner{background:var(--orange);padding:24px 48px;position:relative;overflow:hidden}
+    .hero-banner::after{content:"";position:absolute;right:-60px;top:-60px;width:340px;height:340px;border-radius:50%;background:rgba(255,255,255,0.07)}
+    .hero-banner::before{content:"";position:absolute;right:80px;bottom:-80px;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,0.05)}
+    .hero-label{display:inline-flex;align-items:center;gap:10px;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,0.75);margin-bottom:4px}
+    .hero-label::before{content:"";display:block;width:24px;height:2px;background:rgba(255,255,255,0.6);border-radius:2px}
+    .hero-banner h1{font-size:32px;font-weight:700;color:var(--white);line-height:1.2;white-space:nowrap;position:relative;z-index:1}
+    .hero-banner p{margin-top:6px;font-size:14px;color:rgba(255,255,255,0.82);font-weight:400;max-width:480px;line-height:1.6;position:relative;z-index:1}
+    .cards-section{max-width:1100px;margin:0 auto;padding:52px 48px 80px}
+    .section-title{font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--gray);margin-bottom:28px}
+    .grid{display:grid;gap:24px}
+    @media(max-width:700px){.grid{grid-template-columns:1fr !important} nav,.hero-banner,.cards-section{padding-left:24px;padding-right:24px}}
+    .card{position:relative;background:var(--white);border:1.5px solid var(--border);border-radius:12px;padding:30px 26px 26px;text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:10px;box-shadow:var(--shadow);transition:border-color .25s,transform .25s,box-shadow .25s;overflow:hidden;opacity:0;animation:fadeUp .5s forwards}
+    .card:nth-child(1){animation-delay:.1s}
+    .card::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;background:var(--orange);border-radius:12px 12px 0 0;transform:scaleX(0);transform-origin:left;transition:transform .3s ease}
+    .card:hover{border-color:var(--orange-mid);transform:translateY(-5px);box-shadow:var(--shadow-hover)}
+    .card:hover::before{transform:scaleX(1)}
+    .card-icon{width:48px;height:48px;border-radius:10px;background:var(--orange-light);display:flex;align-items:center;justify-content:center;margin-bottom:6px;color:var(--orange)}
+    .card-icon svg{width:24px;height:24px}
+    .card-title{font-size:18px;font-weight:700;color:var(--dark)}
+    .card-desc{font-size:13.5px;color:var(--gray);font-weight:400;line-height:1.55;flex-grow:1}
+    .card-arrow{margin-top:14px;display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--orange);transition:gap .2s}
+    .card:hover .card-arrow{gap:10px}
+    footer{background:var(--light-gray);border-top:1px solid var(--border);padding:20px 48px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+    footer p{font-size:12px;color:var(--gray)}
+    .status-dot{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:#2eaa7a;font-weight:600}
+    .status-dot::before{content:"";display:block;width:7px;height:7px;border-radius:50%;background:#2eaa7a;animation:pulse 2s ease-in-out infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+  </style></head><body>
+<nav>
+  <div class="logo"><img src="data:image/png;base64,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" alt="GBFoods Africa"/></div>
+  <a class="back-link" href="../../index.html">← Operations Hub</a>
+</nav>
+<div class="hero-banner">
+  <div class="hero-label">Manufacturing</div>
+  <h1>Factory performance & operations</h1>
+  <p>Key indicators by plant — output, efficiency and supply reliability across GBFoods Africa.</p>
+</div>
+<div class="cards-section">
+  <div class="section-title">Select a dashboard</div>
+  <div class="grid" style="grid-template-columns:repeat(1,1fr);max-width:520px">
+    <a class="card" href="#">
+      <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><line x1="6" y1="8" x2="6" y2="13"/><line x1="10" y1="6" x2="10" y2="13"/><line x1="14" y1="9" x2="14" y2="13"/><line x1="18" y1="7" x2="18" y2="13"/></svg></div>
+      <div class="card-title">Manufacturing Dashboard</div>
+      <div class="card-desc">Plant-level KPIs across all GBFoods Africa factories — production volumes, line efficiency, downtime and on-time delivery performance.</div>
+      <div class="card-arrow">Open dashboard <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+    </a>
+  </div>
+</div>
+<footer><p>© 2025 GBFoods Africa · Manufacturing</p><span class="status-dot">All systems operational</span></footer>
+</body></html>
