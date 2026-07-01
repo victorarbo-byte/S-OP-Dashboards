@@ -14,8 +14,25 @@
     --r-sm: 6px; --r-md: 10px; --r-lg: 14px;
     --font: 'Inter', system-ui, -apple-system, sans-serif;
   }
-  body { font-family: var(--font); background: var(--bg); color: var(--t1); min-height: 100vh; padding: 32px 24px 64px; }
+  body { font-family: var(--font); background: var(--bg); color: var(--t1); min-height: 100vh; padding: 0 24px 64px; }
   .wrap { max-width: 1120px; margin: 0 auto; }
+
+  /* ── Tab navigation ── */
+  .tab-bar {
+    display: flex; gap: 0; border-bottom: 1px solid var(--border);
+    margin-bottom: 0; padding-top: 24px; position: sticky; top: 0;
+    background: var(--bg); z-index: 60;
+  }
+  .tab-btn {
+    padding: 10px 20px; font-family: var(--font); font-size: 13px; font-weight: 500;
+    color: var(--t2); background: none; border: none; border-bottom: 2px solid transparent;
+    cursor: pointer; margin-bottom: -1px; transition: all .15s; outline: none;
+    white-space: nowrap;
+  }
+  .tab-btn:hover { color: var(--t1); }
+  .tab-btn.active { color: var(--t1); border-bottom-color: var(--t1); }
+  .tab-pane { display: none; padding-top: 24px; }
+  .tab-pane.active { display: block; }
 
   /* ── Header ── */
   .hdr { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; }
@@ -135,6 +152,20 @@
   .leg-sw   { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
   .chart-h300 { position: relative; width: 100%; height: 300px; }
 
+  /* ── Benchmark spider charts ── */
+  .bench-sec-label { font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .bench-sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .bench-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; margin-bottom: 32px; }
+  .bench-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 14px 14px 10px; display: flex; flex-direction: column; align-items: center; }
+  .bench-title { font-size: 12px; font-weight: 600; color: var(--t1); text-align: center; margin-bottom: 1px; }
+  .bench-sub { font-size: 10px; color: var(--t3); text-align: center; margin-bottom: 8px; }
+  .bench-vals { display: grid; grid-template-columns: 1fr 1fr; gap: 0 8px; width: 100%; margin-top: 8px; border-top: 1px solid var(--border); padding-top: 8px; }
+  .bench-val-row { display: flex; align-items: center; justify-content: space-between; padding: 2px 0; border-bottom: 0.5px solid var(--border); }
+  .bench-val-row:nth-child(n+6) { border-bottom: none; }
+  .bench-val-plant { font-size: 10px; font-weight: 500; }
+  .bench-val-num { font-size: 11px; font-weight: 600; }
+  .bench-global-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; justify-content: center; margin-bottom: 24px; }
+
   /* ── Mobile ── */
   @media (max-width: 600px) {
     body { padding: 16px 12px 48px; }
@@ -168,6 +199,14 @@
 </head>
 <body>
 <div class="wrap">
+  <!-- Tab navigation -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('dashboard')">Dashboard</button>
+    <button class="tab-btn" onclick="switchTab('benchmark')">Plant Benchmark</button>
+  </div>
+
+  <!-- TAB 1: Dashboard -->
+  <div class="tab-pane active" id="tab-dashboard">
 
   <div class="sticky-top">
   <!-- Header -->
@@ -252,6 +291,17 @@
       <div class="chart-h300"><canvas id="env-bar" role="img" aria-label="Year over year comparison"></canvas></div>
     </div>
   </div>
+
+  </div><!-- /tab-dashboard -->
+
+  <!-- TAB 2: Plant Benchmark -->
+  <div class="tab-pane" id="tab-benchmark">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+      <span style="font-size:12px;font-weight:500;color:var(--t2)">Year</span>
+      <div id="bench-year-btns" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+    </div>
+    <div id="bench-content"></div>
+  </div><!-- /tab-benchmark -->
 
 </div>
 
@@ -656,23 +706,45 @@ function fmtComparative(ytd, py, kpi) {
 function renderCards() {
   const vp = visPlantsArr();
 
+  // Weighted avg helper (weight = tons ytd) for util/oee
+  function weightedAvgCard(kpi, yr) {
+    const key = yr === 'ytd' ? 'ytd' : yr;
+    const isYTD = yr === 'ytd';
+    const weights = vp.map(p => normalize(RAW.tons[p]?.[isYTD?'ytd':yr], 'tons', isYTD) ?? 0);
+    const totalW  = weights.reduce((a,b)=>a+b,0);
+    if (totalW === 0) {
+      const vs = vp.map(p => normalize(RAW[kpi][p]?.[key], kpi, isYTD)).filter(v=>v!=null);
+      return vs.length ? vs.reduce((a,b)=>a+b,0)/vs.length : null;
+    }
+    let sum = 0;
+    vp.forEach((p,i) => {
+      const v = normalize(RAW[kpi][p]?.[key], kpi, isYTD);
+      if (v != null) sum += v * weights[i];
+    });
+    return sum / totalW;
+  }
+
   function cardHtml(kpi) {
     const m = META[kpi];
-    const ytdVals = vp.map(p => normalize(RAW[kpi][p]?.ytd, kpi, true)).filter(v => v != null);
-    const pyVals  = vp.map(p => normalize(RAW[kpi][p]?.[2025], kpi, false)).filter(v => v != null);
-    const ytd = ytdVals.length ? (m.ua ? ytdVals.reduce((a,b)=>a+b,0)/ytdVals.length : ytdVals.reduce((a,b)=>a+b,0)) : null;
-    const py  = pyVals.length  ? (m.ua ? pyVals.reduce((a,b)=>a+b,0)/pyVals.length   : pyVals.reduce((a,b)=>a+b,0))  : null;
+    let ytd, py;
+
+    if ((kpi === 'util' || kpi === 'oee') && vp.length > 1) {
+      ytd = weightedAvgCard(kpi, 'ytd');
+      py  = weightedAvgCard(kpi, 2025);
+    } else {
+      const ytdVals = vp.map(p => normalize(RAW[kpi][p]?.ytd, kpi, true)).filter(v => v != null);
+      const pyVals  = vp.map(p => normalize(RAW[kpi][p]?.[2025], kpi, false)).filter(v => v != null);
+      ytd = ytdVals.length ? (m.ua ? ytdVals.reduce((a,b)=>a+b,0)/ytdVals.length : ytdVals.reduce((a,b)=>a+b,0)) : null;
+      py  = pyVals.length  ? (m.ua ? pyVals.reduce((a,b)=>a+b,0)/pyVals.length   : pyVals.reduce((a,b)=>a+b,0))  : null;
+    }
 
     const comp = (ytd != null && py != null) ? fmtComparative(ytd, py, kpi) : { text: '—', cls: 'd-eq' };
     const deltaHtml = `<span class="kc-delta ${comp.cls}">${comp.text}</span>`;
-
     const unitLabel = m.pct ? '' : ` <span style="font-weight:400;text-transform:none;letter-spacing:0">(${m.unit})</span>`;
     return `<div class="kpi-card">
       <div class="kc-label">${m.shortLabel}${unitLabel}</div>
       <div class="kc-val">${fmt(ytd,kpi)}</div>
-      <div class="kc-vs">
-        ${deltaHtml}
-      </div>
+      <div class="kc-vs">${deltaHtml}</div>
     </div>`;
   }
 
@@ -707,6 +779,67 @@ function renderChart(sec, kpi) {
     const key = yr === '2026 YTD' ? 'ytd' : yr;
     return vi.some(i => RAW[kpi][PLANTS[i]][key] != null);
   });
+
+  // ── All plants: aggregate into one bar per year ──
+  if (selectedPlant === 'all') {
+    const AGG_COLOR = '#4a4a47';
+    const aggData = yearsWithData.map(yr => {
+      const isYTD = yr === '2026 YTD';
+      const k = isYTD ? 'ytd' : yr;
+      const vals = vi.map(i => normalize(RAW[kpi][PLANTS[i]][k], kpi, isYTD)).filter(v => v != null);
+      if (!vals.length) return null;
+      // util/oee: weighted avg by tons
+      if (kpi === 'util' || kpi === 'oee') {
+        const weights = vi.map(i => normalize(RAW.tons[PLANTS[i]][k], 'tons', isYTD) ?? 0);
+        const tw = weights.reduce((a,b)=>a+b,0);
+        if (tw === 0) return vals.reduce((a,b)=>a+b,0)/vals.length;
+        return vi.reduce((acc,i) => {
+          const v = normalize(RAW[kpi][PLANTS[i]][k], kpi, isYTD);
+          return acc + (v ?? 0) * (normalize(RAW.tons[PLANTS[i]][k], 'tons', isYTD) ?? 0);
+        }, 0) / tw;
+      }
+      // sum for counts/tons; average for ratios
+      return m.ua ? vals.reduce((a,b)=>a+b,0)/vals.length : vals.reduce((a,b)=>a+b,0);
+    });
+
+    const normNote = m.isInt ? ' (prior years scaled to 5 months)' : '';
+    document.getElementById(`${sec}-ttl`).textContent =
+      `${m.label} — year over year · all plants · total${normNote}`;
+    document.getElementById(`${sec}-leg`).innerHTML = '';
+
+    const datasets = [{
+      label: 'Total',
+      data: aggData,
+      backgroundColor: yearsWithData.map(yr => AGG_COLOR + (yr === '2026 YTD' ? 'ff' : '55')),
+      borderColor:     yearsWithData.map(yr => yr === '2026 YTD' ? AGG_COLOR : 'transparent'),
+      borderWidth: 1.5,
+      borderRadius: 3,
+      skipNull: true,
+    }];
+
+    const ctx = document.getElementById(`${sec}-bar`).getContext('2d');
+    if (charts[sec]) charts[sec].destroy();
+    charts[sec] = new Chart(ctx, {
+      type: 'bar',
+      data: { labels: yearsWithData.map(yr => yr === '2026 YTD' ? '2026 YTD' : String(yr)), datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: c => ` Total: ${fmt(c.parsed.y, kpi)}${m.pct?'':' '+m.unit}` } }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 11 }, color: '#9e9d97', maxRotation: 0 } },
+          y: {
+            grid: { color: 'rgba(0,0,0,0.05)' },
+            ticks: { font: { size: 11 }, color: '#9e9d97', callback: v => fmtAxis(v, kpi) },
+            title: { display: true, text: m.pct ? '%' : m.unit, color: '#9e9d97', font: { size: 11 } }
+          }
+        }
+      }
+    });
+    return;
+  }
 
   const datasets = vi.map(i => {
     const p = PLANTS[i];
@@ -909,6 +1042,213 @@ buildDropdown();
 updateTrigger();
 buildFamilyDropdown();
 renderAll();
+
+// ── Tab switching ──
+function switchTab(name) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    if (b.textContent.toLowerCase().includes(name === 'dashboard' ? 'dashboard' : 'benchmark')) b.classList.add('active');
+  });
+  if (name === 'benchmark' && !window._benchRendered) {
+    renderBenchmark();
+    window._benchRendered = true;
+  }
+}
+
+// ── Benchmark heatmap ──
+let benchYear = 'ytd'; // default to YTD
+
+function renderBenchmark() {
+  // Build year selector buttons
+  const yearBtns = document.getElementById('bench-year-btns');
+  if (yearBtns && !yearBtns.dataset.built) {
+    yearBtns.dataset.built = '1';
+    const years = ['ytd', 2025, 2024];
+    const labels = { ytd:'2026 YTD' };
+    years.forEach(y => {
+      const btn = document.createElement('button');
+      btn.textContent = labels[y] || String(y);
+      btn.style.cssText = `padding:5px 12px;font-size:12px;font-weight:500;border-radius:6px;border:1px solid var(--border-strong);background:${y===benchYear?'var(--t1)':'var(--surface)'};color:${y===benchYear?'#fff':'var(--t2)'};cursor:pointer;font-family:var(--font);outline:none`;
+      btn.onclick = () => {
+        benchYear = y;
+        document.querySelectorAll('#bench-year-btns button').forEach(b => {
+          b.style.background = 'var(--surface)'; b.style.color = 'var(--t2)';
+        });
+        btn.style.background = 'var(--t1)'; btn.style.color = '#fff';
+        renderBenchmarkTable();
+      };
+      yearBtns.appendChild(btn);
+    });
+  }
+  renderBenchmarkTable();
+}
+
+function renderBenchmarkTable() {
+  const BENCH_KPIS = [
+    { key:'accidents',  label:'Accidents',      sub:'(Number)',    hib:false, grp:'pq',  pct:false, fmt:v=>v.toFixed(1),             fmtD:(d)=>{ const s=d>0?'+':''; return s+Math.abs(d).toFixed(1); } },
+    { key:'complaints', label:'Claims/MMSUC',   sub:'(#/MMSUC)',   hib:false, grp:'pq',  pct:false, fmt:v=>v==null?'\u2014':v.toFixed(2), fmtD:(d)=>{ if(d==null) return '\u2014'; const s=d>0?'+':''; return s+Math.abs(d).toFixed(2); } },
+    { key:'tons',       label:'Produced Tons',  sub:'(Tons)',      hib:true,  grp:'fp',  pct:false, fmt:v=>(v/1000).toFixed(1)+'k',  fmtD:(d)=>{ const pc=Math.round(d*100); return (pc>0?'+':'')+pc+'%'; } },
+    { key:'util',       label:'Utilization',    sub:'(%)',         hib:true,  grp:'fp',  pct:true,  fmt:v=>(v*100).toFixed(1)+'%',   fmtD:(d)=>{ const pp=(d*100).toFixed(1); return (d>0?'+':'')+pp+'pp'; } },
+    { key:'oee',        label:'OEE',            sub:'(%)',         hib:true,  grp:'fp',  pct:true,  fmt:v=>(v*100).toFixed(1)+'%',   fmtD:(d)=>{ const pp=(d*100).toFixed(1); return (d>0?'+':'')+pp+'pp'; } },
+    { key:'waste',      label:'Waste',          sub:'(%)',         hib:false, grp:'env', pct:true,  fmt:v=>(v*100).toFixed(2)+'%',   fmtD:(d)=>{ const pp=(d*100).toFixed(2); return (d>0?'+':'')+pp+'pp'; } },
+    { key:'co2',        label:'CO2',            sub:'(Tn CO2/Tn)', hib:false, grp:'env', pct:false, fmt:v=>v.toFixed(3),             fmtD:(d)=>{ const pc=Math.round(d*100); return (pc>0?'+':'')+pc+'%'; } },
+  ];
+  const GRP_COLS  = { pq:'#D94040', fp:'#2A78D6', env:'#2D6B2D' };
+  const GRP_LIGHT = { pq:'#F5DADA', fp:'#D0E4F7', env:'#D0E8D0' };
+  const GRP_LABELS = { pq:'PEOPLE & QUALITY', fp:'FACTORY PERFORMANCE', env:'ENVIRONMENT' };
+  const groups = ['pq','fp','env'];
+
+  function getVal(kpiKey, pi, yr) {
+    const d = RAW[kpiKey]; if (!d) return null;
+    const p = PLANTS[pi];
+    const key = yr === 'ytd' ? 'ytd' : yr;
+    const v = d[p]?.[key] ?? null;
+    if (v != null && yr !== 'ytd') {
+      const m = META[kpiKey];
+      if (m && m.isInt) return v / 12 * 5;
+    }
+    return v;
+  }
+
+  const curYear   = benchYear;
+  const priorYear = curYear === 'ytd' ? 2025 : (parseInt(curYear) - 1);
+
+  const plantVals = PLANTS.map((_, pi) => {
+    const obj = {};
+    BENCH_KPIS.forEach(k => {
+      obj[k.key] = { cur: getVal(k.key, pi, curYear), py: getVal(k.key, pi, priorYear) };
+    });
+    return obj;
+  });
+
+  function weightedAvg(kpiKey, pi_list, yr) {
+    const weights = pi_list.map(pi => getVal('tons', pi, yr) ?? 0);
+    const totalW  = weights.reduce((a,b)=>a+b,0);
+    if (totalW===0) { const vs=pi_list.map(pi=>getVal(kpiKey,pi,yr)).filter(v=>v!=null); return vs.reduce((a,b)=>a+b,0)/vs.length; }
+    return pi_list.reduce((acc,pi,i)=>acc+(getVal(kpiKey,pi,yr)??0)*weights[i],0)/totalW;
+  }
+
+  const allPi = PLANTS.map((_,i)=>i);
+  const totals = {}, totalsPy = {};
+  BENCH_KPIS.forEach(k => {
+    const cv = allPi.map(pi=>getVal(k.key,pi,curYear)).filter(v=>v!=null);
+    const pv = allPi.map(pi=>getVal(k.key,pi,priorYear)).filter(v=>v!=null);
+    if (k.key==='util'||k.key==='oee') {
+      totals[k.key]   = weightedAvg(k.key, allPi, curYear);
+      totalsPy[k.key] = weightedAvg(k.key, allPi, priorYear);
+    } else if (!k.pct||k.key==='tons') {
+      totals[k.key]   = cv.reduce((a,b)=>a+b,0);
+      totalsPy[k.key] = pv.reduce((a,b)=>a+b,0);
+    } else {
+      totals[k.key]   = cv.reduce((a,b)=>a+b,0)/cv.length;
+      totalsPy[k.key] = pv.reduce((a,b)=>a+b,0)/pv.length;
+    }
+  });
+
+  function delta(cur, py, kpi) {
+    if (cur==null||py==null) return null;
+    if (kpi.key==='tons'||kpi.key==='co2') return py!==0?(cur-py)/Math.abs(py):null;
+    return cur-py;
+  }
+  function deltaColor(d, hib) {
+    if (d===null) return '#9e9d97';
+    return (hib?d>0:d<0) ? '#1a6b08' : '#8b1e1e';
+  }
+
+  function normScore(vals, hib) {
+    const valid=vals.filter(v=>v!=null);
+    const mn=Math.min(...valid), mx=Math.max(...valid);
+    if (mx===mn) return vals.map(v=>v==null?null:0.5);
+    return vals.map(v=>v==null?null:hib?(v-mn)/(mx-mn):(mx-v)/(mx-mn));
+  }
+  const kpiScores = BENCH_KPIS.map(k=>normScore(PLANTS.map((_,pi)=>plantVals[pi][k.key].cur),k.hib));
+
+  function rankColor(s,all){ if(s===null)return '#6b6a65'; const v=all.filter(x=>x!==null); if(s===Math.max(...v))return '#1a6b08'; if(s===Math.min(...v))return '#8b1e1e'; return '#1a1a18'; }
+  function rankWeight(s,all){ if(s===null)return '400'; const v=all.filter(x=>x!==null); return(s===Math.max(...v)||s===Math.min(...v))?'700':'400'; }
+
+  const container = document.getElementById('bench-content');
+  const PLANT_W = '88px';
+  const KPI_W   = 'calc((100% - 88px) / 7)';
+
+  let html = '<div style="overflow-x:auto;border-radius:10px;border:1px solid #c8c7c0;overflow:hidden">'
+           + '<table style="width:100%;border-collapse:collapse;min-width:700px;table-layout:fixed">'
+           + '<colgroup><col style="width:' + PLANT_W + '">';
+  BENCH_KPIS.forEach(()=>{ html+='<col style="width:' + KPI_W + '">'; });
+  html+='</colgroup><thead>';
+
+  html+='<tr>'
+      + '<th rowspan="2" style="background:#3a3a37;padding:10px 8px;font-size:13px;font-weight:700;color:#fff;letter-spacing:.06em;text-align:center;border-right:3px solid #fff;vertical-align:middle">PLANT</th>';
+  groups.forEach(g => {
+    const kpis = BENCH_KPIS.filter(k=>k.grp===g);
+    html+='<th colspan="' + kpis.length + '" style="background:' + GRP_COLS[g] + ';padding:10px 8px;font-size:13px;font-weight:700;letter-spacing:.07em;color:#fff;text-align:center;border-left:3px solid #fff">' + GRP_LABELS[g] + '</th>';
+  });
+  html+='</tr><tr>';
+  groups.forEach(g => {
+    const kpis = BENCH_KPIS.filter(k=>k.grp===g);
+    kpis.forEach((kpi,i) => {
+      const bl = i===0?'border-left:3px solid #fff':'border-left:1px solid ' + GRP_COLS[g] + '44';
+      html+='<th style="background:' + GRP_LIGHT[g] + ';padding:8px 6px;text-align:center;' + bl + ';border-bottom:3px solid ' + GRP_COLS[g] + '">'
+          + '<div style="font-size:12px;font-weight:700;color:' + GRP_COLS[g] + '">' + kpi.label + '</div>'
+          + '<div style="font-size:10px;font-weight:400;color:#888;margin-top:1px">' + kpi.sub + '</div>'
+          + '</th>';
+    });
+  });
+  html+='</tr></thead><tbody>';
+
+  PLANTS.forEach((plant, pi) => {
+    const rowBg = pi%2===0?'#ffffff':'#f8f7f4';
+    html+='<tr style="background:' + rowBg + '">'
+        + '<td style="padding:8px 10px;font-size:13px;font-weight:600;color:#3a3a37;text-align:center;background:#efefeb;border-bottom:1px solid #dddcd6;border-right:3px solid #c8c7c0">' + plant + '</td>';
+    groups.forEach(g => {
+      const kpis = BENCH_KPIS.filter(k=>k.grp===g);
+      kpis.forEach((kpi,ki) => {
+        const idx = BENCH_KPIS.indexOf(kpi);
+        const cur = plantVals[pi][kpi.key].cur;
+        const py  = plantVals[pi][kpi.key].py;
+        const d   = delta(cur, py, kpi);
+        const s   = kpiScores[idx][pi];
+        const fg  = rankColor(s, kpiScores[idx]);
+        const fw  = rankWeight(s, kpiScores[idx]);
+        const dc  = deltaColor(d, kpi.hib);
+        const dTxt= d!=null ? kpi.fmtD(d) : '\u2014';
+        const bl  = ki===0?'border-left:3px solid ' + GRP_COLS[g]:'border-left:1px solid #e4e3dc';
+        html+='<td style="padding:7px 6px;text-align:center;border-bottom:1px solid #e4e3dc;' + bl + '">'
+            + '<div style="font-size:14px;font-weight:' + fw + ';color:' + fg + ';line-height:1.2">' + kpi.fmt(cur??0) + '</div>'
+            
+            + '</td>';
+      });
+    });
+    html+='</tr>';
+  });
+
+  html+='<tr style="background:#eceae4;border-top:2px solid #b0afaa">'
+      + '<td style="padding:8px 10px;font-size:13px;font-weight:700;color:#3a3a37;text-align:center;background:#dddcd6;border-right:3px solid #c8c7c0">Total</td>';
+  groups.forEach(g => {
+    const kpis = BENCH_KPIS.filter(k=>k.grp===g);
+    kpis.forEach((kpi,ki) => {
+      const cur = totals[kpi.key];
+      const py  = totalsPy[kpi.key];
+      const d   = delta(cur, py, kpi);
+      const dc  = deltaColor(d, kpi.hib);
+      const dTxt= d!=null ? kpi.fmtD(d) : '\u2014';
+      const bl  = ki===0?'border-left:3px solid ' + GRP_COLS[g]:'border-left:1px solid #e4e3dc';
+      html+='<td style="padding:7px 6px;text-align:center;' + bl + '">'
+          + '<div style="font-size:14px;font-weight:700;color:#1a1a18;line-height:1.2">' + kpi.fmt(cur??0) + '</div>'
+          
+          + '</td>';
+    });
+  });
+  html+='</tr></tbody></table></div>'
+      + '<div style="display:flex;flex-wrap:wrap;gap:6px 20px;margin-top:10px;font-size:11px;color:var(--t2);align-items:center">'
+      + '<span style="font-weight:700;color:#1a6b08">Green</span><span>= best</span>'
+      + '<span style="font-weight:700;color:#8b1e1e">Red</span><span>= worst</span>'
+      + '<span style="color:var(--t3);margin-left:4px">\u00b7 Utilization & OEE weighted by produced tons</span>'
+      + '</div>';
+
+  container.innerHTML = html;
+}
 </script>
 </body>
 </html>
