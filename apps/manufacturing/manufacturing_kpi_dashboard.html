@@ -299,6 +299,28 @@
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
       <span style="font-size:12px;font-weight:500;color:var(--t2)">Year</span>
       <div id="bench-year-btns" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+      <span style="font-size:12px;font-weight:500;color:var(--t2);margin-left:10px">Category</span>
+      <div class="family-selector" id="bench-cat" style="margin-bottom:0">
+        <div class="fs-trigger" id="bench-cat-trigger" onclick="toggleBenchCatDropdown()">
+          <span id="bench-cat-label">All categories</span>
+          <span class="fs-arrow">▼</span>
+        </div>
+        <div class="fs-dropdown" id="bench-cat-dropdown">
+          <div class="fs-option selected" id="bench-cat-all" onclick="selectBenchCategory('all')">All categories</div>
+          <div id="bench-cat-options"></div>
+        </div>
+      </div>
+      <span style="font-size:12px;font-weight:500;color:var(--t2);margin-left:4px">Technology</span>
+      <div class="family-selector" id="bench-tech" style="margin-bottom:0">
+        <div class="fs-trigger" id="bench-tech-trigger" onclick="toggleBenchTechDropdown()">
+          <span id="bench-tech-label">All technologies</span>
+          <span class="fs-arrow">▼</span>
+        </div>
+        <div class="fs-dropdown" id="bench-tech-dropdown">
+          <div class="fs-option selected" id="bench-tech-all" onclick="selectBenchTechnology('all')">All technologies</div>
+          <div id="bench-tech-options"></div>
+        </div>
+      </div>
     </div>
     <div id="bench-content"></div>
   </div><!-- /tab-benchmark -->
@@ -398,7 +420,7 @@ const activeKPI = { pq:'accidents', fp:'tons', env:'waste' };
 const FAMILY_DATA = {
   Volume: {
     Oran:    {
-      Tablets:   {2021:4183,2022:3720,2023:4571,2024:4732,2025:5441,ytd:2284},
+      Cubes:   {2021:4183,2022:3720,2023:4571,2024:4732,2025:5441,ytd:2284},
       Seasoning: {2021:159.264,2022:219.82,2023:237.69,2024:326,2025:331,ytd:71},
       Soups:    {2021:108.658,2022:84.031,2023:62.401,2024:37.012,2025:73,ytd:103},
       Noodles:   {2021:3147.639,2022:2459.123,2023:3124.069,2024:3463,2025:3962,ytd:1794},
@@ -414,23 +436,23 @@ const FAMILY_DATA = {
       LUP:       {2021:26403,2022:28041,2023:38855,2024:37720,2025:39549,ytd:18091.7},
     },
     Sango:   {
-      Cube:      {2021:6591,2022:6089,2023:2393.659,2024:3085.835,2025:2611.296,ytd:956.672},
+      Cubes:      {2021:6591,2022:6089,2023:2393.659,2024:3085.835,2025:2611.296,ytd:956.672},
       Mayonaise:{2021:14844,2022:11041,2023:14129,2024:13929.75,2025:15114.291,ytd:6343.271},
       Seasoning: {2021:2265.802,2022:2065,2023:2002.659,2024:2028.044,2025:2390.062,ytd:1149.512},
     },
     Dakar:   {
-      Tablets:   {2021:7751.935,2022:8357.403,2023:7352.145,2024:7848.415,2025:10869.592,ytd:4957.746},
+      Cubes:   {2021:7751.935,2022:8357.403,2023:7352.145,2024:7848.415,2025:10869.592,ytd:4957.746},
       Seasoning: {2021:2219.004,2022:2765.161,2023:2141.691,2024:3724.327,2025:3708.055,ytd:2249.171},
       JAL:       {2021:22.579,2022:143.565,2023:208.47,2024:293.823,2025:372.218,ytd:72.391},
     },
     Ballobar:{
-      Tablets:      {2021:38909.489,2022:36299.02,2023:39875.646,2024:43268.748,2025:46107.921,ytd:20779.129},
-      'Dry Eruope': {2021:10793,2022:11939,2023:11908,2024:10842,2025:11833,ytd:4807.578},
+      Cubes:      {2021:38909.489,2022:36299.02,2023:39875.646,2024:43268.748,2025:46107.921,ytd:20779.129},
+      'Dry Europe': {2021:10793,2022:11939,2023:11908,2024:10842,2025:11833,ytd:4807.578},
     },
   },
   OEE: {
     Oran:    {
-      Tablets:   {2021:0.700545,2022:0.678476,2023:0.693694,2024:0.765217,2025:0.686796,ytd:0.642975},
+      Cubes:   {2021:0.700545,2022:0.678476,2023:0.693694,2024:0.765217,2025:0.686796,ytd:0.642975},
       Seasoning: {2021:0.783309,2022:0.706891,2023:0.677998,2024:0.6,2025:0.608299,ytd:0.62},
       Soups:    {2021:0.482023,2022:0.433043,2023:0.48768,2024:0.6524,2025:0.475234,ytd:0.54},
       Noodles:   {2021:0.856232,2022:0.767859,2023:0.78,2024:0.812101,2025:0.882417,ytd:0.86},
@@ -446,23 +468,23 @@ const FAMILY_DATA = {
       LUP:       {2021:0.788961,2022:0.764759,2023:0.788359,2024:0.8006,2025:0.655,ytd:0.652},
     },
     Sango:   {
-      Cube:      {2021:0.53,2022:0.63,2023:0.64,2024:0.6,2025:0.624,ytd:0.65},
+      Cubes:      {2021:0.53,2022:0.63,2023:0.64,2024:0.6,2025:0.624,ytd:0.65},
       Mayonaise:{2021:0.72,2022:0.7,2023:0.66,2024:0.63,2025:0.63,ytd:0.67},
       Seasoning: {2021:0.83,2022:0.89,2023:0.83,2024:0.79,2025:0.824,ytd:0.81},
     },
     Dakar:   {
-      Tablets:   {2021:0.551,2022:0.5,2023:0.45,2024:0.55,2025:0.47,ytd:0.49},
+      Cubes:   {2021:0.551,2022:0.5,2023:0.45,2024:0.55,2025:0.47,ytd:0.49},
       Seasoning: {2021:0.772,2022:0.622,2023:0.617,2024:0.678,2025:0.57,ytd:0.59},
       JAL:       {2021:0.52,2022:0.45,2023:0.45,2024:0.51,2025:0.57,ytd:0.62},
     },
     Ballobar:{
-      Tablets:      {2021:0.685742,2022:0.696591,2023:0.710869,2024:0.71908,2025:0.668,ytd:0.676},
-      'Dry Eruope': {2021:0.48,2022:0.52,2023:0.52,2024:0.48,2025:0.41,ytd:0.41},
+      Cubes:      {2021:0.685742,2022:0.696591,2023:0.710869,2024:0.71908,2025:0.668,ytd:0.676},
+      'Dry Europe': {2021:0.48,2022:0.52,2023:0.52,2024:0.48,2025:0.41,ytd:0.41},
     },
   },
   util: {
     Oran:    {
-      Tablets:   {2021:0.607106,2022:0.519132,2023:0.673019,2024:0.677004,2025:0.803174,ytd:0.68},
+      Cubes:   {2021:0.607106,2022:0.519132,2023:0.673019,2024:0.677004,2025:0.803174,ytd:0.68},
       Seasoning: {2021:0.48984,2022:0.893836,2023:0.952626,2024:0.66,2025:0.59589,ytd:0.7},
       Soups:    {2021:0.352626,2022:0.115525,2023:0.087785,2024:0.03,2025:0.116895,ytd:0.34},
       Noodles:   {2021:0.642237,2022:0.578082,2023:0.485,2024:0.348389,2025:0.390525,ytd:0.45},
@@ -478,18 +500,18 @@ const FAMILY_DATA = {
       LUP:       {2021:0.416814,2022:0.504916,2023:0.667846,2024:0.56,2025:0.68,ytd:0.77},
     },
     Sango:   {
-      Cube:      {2021:0.33,2022:0.41,2023:0.19,2024:0.24,2025:0.19,ytd:0.11},
+      Cubes:      {2021:0.33,2022:0.41,2023:0.19,2024:0.24,2025:0.19,ytd:0.11},
       Mayonaise:{2021:0.71,2022:0.71099,2023:0.72,2024:0.58,2025:0.3,ytd:0.32},
       Seasoning: {2021:0.54,2022:0.45,2023:0.45,2024:0.5,2025:0.57,ytd:0.66},
     },
     Dakar:   {
-      Tablets:   {2021:0.762,2022:0.571,2023:0.546,2024:0.388,2025:0.72,ytd:0.725},
+      Cubes:   {2021:0.762,2022:0.571,2023:0.546,2024:0.388,2025:0.72,ytd:0.725},
       Seasoning: {2021:0.878,2022:0.693,2023:0.592,2024:0.576,2025:0.52,ytd:0.77},
       JAL:       {2021:0.14,2022:0.14,2023:0.22,2024:0.32,2025:0.26,ytd:0.2},
     },
     Ballobar:{
-      Tablets:      {2021:0.71,2022:0.67,2023:0.738599,2024:0.81,2025:0.85,ytd:0.83},
-      'Dry Eruope': {2021:0.22,2022:0.26,2023:0.29,2024:0.26,2025:0.29,ytd:0.3},
+      Cubes:      {2021:0.71,2022:0.67,2023:0.738599,2024:0.81,2025:0.85,ytd:0.83},
+      'Dry Europe': {2021:0.22,2022:0.26,2023:0.29,2024:0.26,2025:0.29,ytd:0.3},
     },
   }
 };
@@ -565,6 +587,99 @@ document.addEventListener('click', e => {
     document.getElementById('fs-trigger').classList.remove('open');
   }
 });
+
+// ── Category / Technology mapping (used by Plant Benchmark) ──
+const TECH_CATEGORY = {
+  Cubes:          'Taste Enhancers',
+  Seasoning:      'Taste Enhancers',
+  JAL:            'Taste Enhancers',
+  'Dry Europe':   'Taste Enhancers',
+  Noodles:        'Noodles',
+  SUP:            'Tomato',
+  LUP:            'Tomato',
+  Can:            'Tomato',
+  Mayonaise:      'Mayonnaise',
+  Soups:          'Others',
+};
+const ALL_TECHNOLOGIES = Object.keys(TECH_CATEGORY);
+const ALL_CATEGORIES = [...new Set(Object.values(TECH_CATEGORY))];
+
+let benchCategory = 'all';
+let benchTechnology = 'all';
+let benchCatDropOpen = false;
+let benchTechDropOpen = false;
+
+function techsForCategory(cat) {
+  if (cat === 'all') return ALL_TECHNOLOGIES;
+  return ALL_TECHNOLOGIES.filter(t => TECH_CATEGORY[t] === cat);
+}
+
+function buildBenchCatDropdown() {
+  document.getElementById('bench-cat-all').className = 'fs-option' + (benchCategory === 'all' ? ' selected' : '');
+  document.getElementById('bench-cat-options').innerHTML = ALL_CATEGORIES.map(c =>
+    `<div class="fs-option${benchCategory === c ? ' selected' : ''}" onclick="selectBenchCategory('${c}')">${c}</div>`
+  ).join('');
+}
+function toggleBenchCatDropdown() {
+  benchCatDropOpen = !benchCatDropOpen;
+  document.getElementById('bench-cat-dropdown').classList.toggle('open', benchCatDropOpen);
+  document.getElementById('bench-cat-trigger').classList.toggle('open', benchCatDropOpen);
+}
+function selectBenchCategory(cat) {
+  benchCategory = cat;
+  document.getElementById('bench-cat-label').textContent = cat === 'all' ? 'All categories' : cat;
+  // Reset technology if it no longer belongs to the newly selected category
+  if (benchTechnology !== 'all' && cat !== 'all' && TECH_CATEGORY[benchTechnology] !== cat) {
+    benchTechnology = 'all';
+    document.getElementById('bench-tech-label').textContent = 'All technologies';
+  }
+  buildBenchCatDropdown();
+  buildBenchTechDropdown();
+  benchCatDropOpen = false;
+  document.getElementById('bench-cat-dropdown').classList.remove('open');
+  document.getElementById('bench-cat-trigger').classList.remove('open');
+  renderBenchmarkTable();
+}
+
+function buildBenchTechDropdown() {
+  const techs = techsForCategory(benchCategory);
+  document.getElementById('bench-tech-all').className = 'fs-option' + (benchTechnology === 'all' ? ' selected' : '');
+  document.getElementById('bench-tech-options').innerHTML = techs.map(t =>
+    `<div class="fs-option${benchTechnology === t ? ' selected' : ''}" onclick="selectBenchTechnology('${t}')">${t}</div>`
+  ).join('');
+}
+function toggleBenchTechDropdown() {
+  benchTechDropOpen = !benchTechDropOpen;
+  document.getElementById('bench-tech-dropdown').classList.toggle('open', benchTechDropOpen);
+  document.getElementById('bench-tech-trigger').classList.toggle('open', benchTechDropOpen);
+}
+function selectBenchTechnology(tech) {
+  benchTechnology = tech;
+  document.getElementById('bench-tech-label').textContent = tech === 'all' ? 'All technologies' : tech;
+  // If picking a technology directly, sync the category label to match it
+  if (tech !== 'all' && benchCategory === 'all') {
+    benchCategory = 'all'; // keep "All categories" so the technology list stays complete
+  }
+  buildBenchTechDropdown();
+  benchTechDropOpen = false;
+  document.getElementById('bench-tech-dropdown').classList.remove('open');
+  document.getElementById('bench-tech-trigger').classList.remove('open');
+  renderBenchmarkTable();
+}
+
+document.addEventListener('click', e => {
+  if (benchCatDropOpen && !document.getElementById('bench-cat').contains(e.target)) {
+    benchCatDropOpen = false;
+    document.getElementById('bench-cat-dropdown').classList.remove('open');
+    document.getElementById('bench-cat-trigger').classList.remove('open');
+  }
+  if (benchTechDropOpen && !document.getElementById('bench-tech').contains(e.target)) {
+    benchTechDropOpen = false;
+    document.getElementById('bench-tech-dropdown').classList.remove('open');
+    document.getElementById('bench-tech-trigger').classList.remove('open');
+  }
+});
+
 const charts = { pq:null, fp:null, env:null };
 let dropOpen = false;
 
@@ -1082,7 +1197,57 @@ function renderBenchmark() {
       yearBtns.appendChild(btn);
     });
   }
+  buildBenchCatDropdown();
+  buildBenchTechDropdown();
   renderBenchmarkTable();
+}
+
+// ── Helpers for Category/Technology filtering & recalculation ──
+function getFamilyVal(sheet, plant, tech, yr) {
+  const d = FAMILY_DATA[sheet]?.[plant]?.[tech];
+  if (!d) return null;
+  const key = yr === 'ytd' ? 'ytd' : yr;
+  const v = d[key];
+  if (v == null) return null;
+  if (sheet === 'Volume' && yr !== 'ytd') return v / 12 * 5; // normalize prior full years to 5-month equivalent
+  return v;
+}
+function benchSelectionActive() {
+  return benchCategory !== 'all' || benchTechnology !== 'all';
+}
+function benchActiveTechs() {
+  if (benchTechnology !== 'all') return [benchTechnology];
+  return techsForCategory(benchCategory);
+}
+function plantHasBenchSelection(plant, techs) {
+  return techs.some(t =>
+    FAMILY_DATA.Volume?.[plant]?.[t] != null ||
+    FAMILY_DATA.OEE?.[plant]?.[t]    != null ||
+    FAMILY_DATA.util?.[plant]?.[t]   != null
+  );
+}
+// Recompute a Factory Performance KPI (tons / oee / util) for one plant, restricted to a set of technologies
+function computeFPForPlant(kpiKey, plant, techs, yr) {
+  const sheet = kpiKey === 'tons' ? 'Volume' : kpiKey === 'oee' ? 'OEE' : 'util';
+  const plantTechs = techs.filter(t => FAMILY_DATA[sheet]?.[plant]?.[t] != null);
+  if (plantTechs.length === 0) return null;
+  if (kpiKey === 'tons') {
+    let sum = 0, any = false;
+    plantTechs.forEach(t => { const v = getFamilyVal('Volume', plant, t, yr); if (v != null) { sum += v; any = true; } });
+    return any ? sum : null;
+  }
+  // util / oee: weighted average using produced tons of the matched technologies as weight
+  let wSum = 0, vSum = 0;
+  plantTechs.forEach(t => {
+    const w = getFamilyVal('Volume', plant, t, yr) ?? 0;
+    const v = getFamilyVal(sheet, plant, t, yr);
+    if (v != null) { wSum += w; vSum += w * v; }
+  });
+  if (wSum === 0) {
+    const vs = plantTechs.map(t => getFamilyVal(sheet, plant, t, yr)).filter(v => v != null);
+    return vs.length ? vs.reduce((a,b)=>a+b,0) / vs.length : null;
+  }
+  return vSum / wSum;
 }
 
 function renderBenchmarkTable() {
@@ -1101,8 +1266,11 @@ function renderBenchmarkTable() {
   const groups = ['pq','fp','env'];
 
   function getVal(kpiKey, pi, yr) {
-    const d = RAW[kpiKey]; if (!d) return null;
     const p = PLANTS[pi];
+    if (benchSelectionActive() && (kpiKey === 'tons' || kpiKey === 'oee' || kpiKey === 'util')) {
+      return computeFPForPlant(kpiKey, p, benchActiveTechs(), yr);
+    }
+    const d = RAW[kpiKey]; if (!d) return null;
     const key = yr === 'ytd' ? 'ytd' : yr;
     const v = d[p]?.[key] ?? null;
     if (v != null && yr !== 'ytd') {
@@ -1130,7 +1298,9 @@ function renderBenchmarkTable() {
     return pi_list.reduce((acc,pi,i)=>acc+(getVal(kpiKey,pi,yr)??0)*weights[i],0)/totalW;
   }
 
-  const allPi = PLANTS.map((_,i)=>i);
+  const allPi = benchSelectionActive()
+    ? PLANTS.map((_,i)=>i).filter(i => plantHasBenchSelection(PLANTS[i], benchActiveTechs()))
+    : PLANTS.map((_,i)=>i);
   const totals = {}, totalsPy = {};
   BENCH_KPIS.forEach(k => {
     const cv = allPi.map(pi=>getVal(k.key,pi,curYear)).filter(v=>v!=null);
@@ -1163,7 +1333,7 @@ function renderBenchmarkTable() {
     if (mx===mn) return vals.map(v=>v==null?null:0.5);
     return vals.map(v=>v==null?null:hib?(v-mn)/(mx-mn):(mx-v)/(mx-mn));
   }
-  const kpiScores = BENCH_KPIS.map(k=>normScore(PLANTS.map((_,pi)=>plantVals[pi][k.key].cur),k.hib));
+  const kpiScores = BENCH_KPIS.map(k=>normScore(allPi.map(pi=>plantVals[pi][k.key].cur),k.hib));
 
   function rankColor(s,all){ if(s===null)return '#6b6a65'; const v=all.filter(x=>x!==null); if(s===Math.max(...v))return '#1a6b08'; if(s===Math.min(...v))return '#8b1e1e'; return '#1a1a18'; }
   function rankWeight(s,all){ if(s===null)return '400'; const v=all.filter(x=>x!==null); return(s===Math.max(...v)||s===Math.min(...v))?'700':'400'; }
@@ -1195,10 +1365,17 @@ function renderBenchmarkTable() {
           + '</th>';
     });
   });
+  if (allPi.length === 0) {
+    html += '<tbody><tr><td colspan="' + (BENCH_KPIS.length + 1) + '" style="padding:24px;text-align:center;font-size:13px;color:var(--t2)">No plants match this Category / Technology selection.</td></tr></tbody></table></div>';
+    container.innerHTML = html;
+    return;
+  }
+
   html+='</tr></thead><tbody>';
 
-  PLANTS.forEach((plant, pi) => {
-    const rowBg = pi%2===0?'#ffffff':'#f8f7f4';
+  allPi.forEach((pi, rowIdx) => {
+    const plant = PLANTS[pi];
+    const rowBg = rowIdx%2===0?'#ffffff':'#f8f7f4';
     html+='<tr style="background:' + rowBg + '">'
         + '<td style="padding:8px 10px;font-size:13px;font-weight:600;color:#3a3a37;text-align:center;background:#efefeb;border-bottom:1px solid #dddcd6;border-right:3px solid #c8c7c0">' + plant + '</td>';
     groups.forEach(g => {
@@ -1208,14 +1385,14 @@ function renderBenchmarkTable() {
         const cur = plantVals[pi][kpi.key].cur;
         const py  = plantVals[pi][kpi.key].py;
         const d   = delta(cur, py, kpi);
-        const s   = kpiScores[idx][pi];
+        const s   = kpiScores[idx][rowIdx];
         const fg  = rankColor(s, kpiScores[idx]);
         const fw  = rankWeight(s, kpiScores[idx]);
         const dc  = deltaColor(d, kpi.hib);
         const dTxt= d!=null ? kpi.fmtD(d) : '\u2014';
         const bl  = ki===0?'border-left:3px solid ' + GRP_COLS[g]:'border-left:1px solid #e4e3dc';
         html+='<td style="padding:7px 6px;text-align:center;border-bottom:1px solid #e4e3dc;' + bl + '">'
-            + '<div style="font-size:14px;font-weight:' + fw + ';color:' + fg + ';line-height:1.2">' + kpi.fmt(cur??0) + '</div>'
+            + '<div style="font-size:14px;font-weight:' + fw + ';color:' + fg + ';line-height:1.2">' + (cur!=null ? kpi.fmt(cur) : '\u2014') + '</div>'
             
             + '</td>';
       });
@@ -1235,7 +1412,7 @@ function renderBenchmarkTable() {
       const dTxt= d!=null ? kpi.fmtD(d) : '\u2014';
       const bl  = ki===0?'border-left:3px solid ' + GRP_COLS[g]:'border-left:1px solid #e4e3dc';
       html+='<td style="padding:7px 6px;text-align:center;' + bl + '">'
-          + '<div style="font-size:14px;font-weight:700;color:#1a1a18;line-height:1.2">' + kpi.fmt(cur??0) + '</div>'
+          + '<div style="font-size:14px;font-weight:700;color:#1a1a18;line-height:1.2">' + (cur!=null ? kpi.fmt(cur) : '\u2014') + '</div>'
           
           + '</td>';
     });
@@ -1245,6 +1422,7 @@ function renderBenchmarkTable() {
       + '<span style="font-weight:700;color:#1a6b08">Green</span><span>= best</span>'
       + '<span style="font-weight:700;color:#8b1e1e">Red</span><span>= worst</span>'
       + '<span style="color:var(--t3);margin-left:4px">\u00b7 Utilization & OEE weighted by produced tons</span>'
+      + (benchSelectionActive() ? '<span style="color:var(--t3);margin-left:4px">\u00b7 Produced Tons / Utilization / OEE recalculated for ' + (benchTechnology!=='all'?benchTechnology:benchCategory) + ' \u00b7 showing ' + allPi.length + ' of ' + PLANTS.length + ' plants</span>' : '')
       + '</div>';
 
   container.innerHTML = html;
