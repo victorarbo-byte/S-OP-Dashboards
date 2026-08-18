@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="ca">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Llibre de Gastos · Hogar</title>
+<title>Llibre de Despeses · Casa</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -118,7 +118,7 @@
 
   .panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:20px;}
   .panel h3{margin:0 0 14px;font-size:16px;font-weight:600;font-family:'Inter';}
-  canvas{max-width:100%;}
+  canvas{max-width:100%;max-height:100%;}
 
   table{width:100%;border-collapse:collapse;font-size:13.5px;}
   th{text-align:left;color:var(--muted);font-weight:500;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;padding:8px 10px;border-bottom:1px solid var(--line);}
@@ -159,13 +159,40 @@
   .toast{position:fixed;bottom:22px;right:22px;background:var(--surface-2);border:1px solid var(--gold);color:var(--text);
     padding:12px 18px;border-radius:10px;font-size:13.5px;z-index:60;display:none;}
 
+  .topbar{
+    display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-bottom:18px;
+  }
+  .topbar select{width:auto;padding:7px 10px;font-size:13px;}
+  .topbar .btn-ghost{padding:7px 10px;font-size:16px;line-height:1;}
+
   @media(max-width:820px){
+    body{padding-bottom:env(safe-area-inset-bottom);}
     .shell{flex-direction:column;}
-    nav.side{width:100%;flex-direction:row;overflow-x:auto;padding:12px;align-items:center;}
+    main{padding:14px 14px calc(84px + env(safe-area-inset-bottom));max-width:100%;}
+    .rowhead{margin-bottom:16px;}
+    .rowhead h2{font-size:20px;}
+    .panel{padding:14px;margin-bottom:14px;}
+    .kpis{gap:10px;margin-bottom:18px;}
+    .kpi{padding:14px;}
+    .kpi .value{font-size:20px;}
+    canvas{height:180px !important;}
+    .mapgrid{grid-template-columns:1fr;}
+
+    nav.side{
+      position:fixed;left:0;right:0;bottom:0;top:auto;width:100%;height:auto;
+      flex-direction:row;justify-content:space-around;align-items:stretch;
+      padding:6px 2px calc(6px + env(safe-area-inset-bottom));
+      border-right:none;border-top:1px solid var(--line);
+      z-index:30;background:var(--surface);
+    }
     nav.side .brand{display:none;}
     nav.side .spacer{display:none;}
-    main{padding:18px;}
-    .mapgrid{grid-template-columns:1fr;}
+    nav.side .accountbar{display:none;}
+    nav.side #btnReset{display:none;}
+    nav.side button.tab{
+      flex-direction:column;gap:2px;font-size:10px;padding:6px 2px;margin-bottom:0;
+      text-align:center;border-radius:10px;
+    }
   }
 </style>
 </head>
@@ -174,18 +201,18 @@
 <!-- ===================== SETUP SCREEN ===================== -->
 <div id="setup">
   <div class="card">
-    <h1>Llibre de Gastos</h1>
-    <p>Conecta tu proyecto de Supabase para guardar el histórico de la cuenta conjunta (y más adelante, la personal).</p>
+    <h1>Llibre de Despeses</h1>
+    <p>Connecta el teu projecte de Supabase per desar l'històric del compte conjunt (i més endavant, el personal).</p>
     <label>Project URL</label>
     <input id="inUrl" type="text" placeholder="https://xxxx.supabase.co">
-    <label>Anon public key</label>
+    <label>Clau pública anon</label>
     <input id="inKey" type="text" placeholder="eyJhbGciOi...">
     <div id="setupErr"></div>
-    <button class="btn-primary" style="width:100%;margin-top:20px;" id="btnConnect">Conectar →</button>
+    <button class="btn-primary" style="width:100%;margin-top:20px;" id="btnConnect">Connecta →</button>
     <details class="help">
-      <summary>¿Aún no tienes el proyecto creado?</summary>
-      <p style="margin-top:10px;">1. Crea un proyecto gratis en <strong>supabase.com</strong>.<br>
-      2. Abre el <strong>SQL Editor</strong> y pega esto:</p>
+      <summary>Encara no tens el projecte creat?</summary>
+      <p style="margin-top:10px;">1. Crea un projecte gratuït a <strong>supabase.com</strong>.<br>
+      2. Obre l'<strong>SQL Editor</strong> i enganxa això:</p>
       <pre id="sqlBlock">create table expenses (
   id uuid primary key default gen_random_uuid(),
   fecha date not null,
@@ -209,7 +236,7 @@ alter table categories disable row level security;
 grant usage on schema public to anon;
 grant all on expenses to anon;
 grant all on categories to anon;</pre>
-      <p>3. Ve a <strong>Project Settings → API</strong> y copia la Project URL y la clave <strong>anon public</strong> aquí arriba.</p>
+      <p>3. Vés a <strong>Project Settings → API</strong> i copia la Project URL i la clau <strong>anon public</strong> aquí dalt.</p>
     </details>
   </div>
 </div>
@@ -218,28 +245,28 @@ grant all on categories to anon;</pre>
 <div id="app">
 <div class="shell">
   <nav class="side">
-    <div class="brand">Llibre de<br>Gastos<span>Hogar</span></div>
-    <button class="tab active" data-view="dashboard">📊 Resumen</button>
-    <button class="tab" data-view="movimientos">📒 Movimientos</button>
-    <button class="tab" data-view="importar">⬆ Importar</button>
-    <button class="tab" data-view="categorias">🏷 Categorías</button>
+    <div class="brand">Llibre de<br>Despeses<span>Casa</span></div>
+    <button class="tab active" data-view="dashboard">📊 Resum</button>
+    <button class="tab" data-view="movimientos">📒 Moviments</button>
+    <button class="tab" data-view="importar">⬆ Importa</button>
+    <button class="tab" data-view="categorias">🏷 Categories</button>
     <div class="spacer"></div>
-    <div class="accountbar">
-      <label style="margin-bottom:6px;">Cuenta</label>
-      <select id="globalAccount">
-        <option value="__all__">Todas las cuentas</option>
-        <option value="Conjunta">Conjunta</option>
-        <option value="Personal">Personal</option>
-      </select>
-    </div>
-    <button class="btn-ghost" style="margin-top:14px;width:100%;" id="btnReset">Cambiar proyecto</button>
   </nav>
 
   <main>
+    <div class="topbar">
+      <select id="globalAccount">
+        <option value="__all__">Tots els comptes</option>
+        <option value="Conjunta">Conjunt</option>
+        <option value="Personal">Personal</option>
+      </select>
+      <button class="btn-ghost" id="btnReset" title="Canvia de projecte">⚙︎</button>
+    </div>
+
     <!-- ---------- DASHBOARD ---------- -->
     <section class="view active" id="view-dashboard">
       <div class="rowhead">
-        <h2>Resumen</h2>
+        <h2>Resum</h2>
         <div class="filters">
           <select id="dashYear"></select>
         </div>
@@ -248,92 +275,96 @@ grant all on categories to anon;</pre>
       <div class="ledger" id="ledgerStrip"></div>
 
       <div class="kpis">
-        <div class="kpi"><div class="label">Mes seleccionado</div><div class="value gold mono" id="kpiMonth">–</div></div>
-        <div class="kpi"><div class="label">Media últimos 3 meses</div><div class="value mono" id="kpiAvg3">–</div></div>
-        <div class="kpi"><div class="label">Media últimos 12 meses</div><div class="value mono" id="kpiAvg12">–</div></div>
-        <div class="kpi"><div class="label">Categoría con más gasto</div><div class="value coral" id="kpiTop" style="font-size:16px;">–</div></div>
+        <div class="kpi"><div class="label">Mes seleccionat</div><div class="value gold mono" id="kpiMonth">–</div></div>
+        <div class="kpi"><div class="label">Mitjana últims 3 mesos</div><div class="value mono" id="kpiAvg3">–</div></div>
+        <div class="kpi"><div class="label">Mitjana últims 12 mesos</div><div class="value mono" id="kpiAvg12">–</div></div>
+        <div class="kpi"><div class="label">Categoria amb més despesa</div><div class="value coral" id="kpiTop" style="font-size:16px;">–</div></div>
       </div>
 
       <div class="panel">
-        <h3>Evolución mensual</h3>
-        <canvas id="chartTrend" height="90"></canvas>
+        <h3>Evolució mensual</h3>
+        <div style="position:relative;height:200px;">
+          <canvas id="chartTrend"></canvas>
+        </div>
       </div>
 
       <div class="panel">
-        <h3>Por categoría (mes seleccionado)</h3>
-        <canvas id="chartCat" height="110"></canvas>
+        <h3>Per categoria (mes seleccionat)</h3>
+        <div style="position:relative;height:240px;">
+          <canvas id="chartCat"></canvas>
+        </div>
       </div>
     </section>
 
     <!-- ---------- MOVIMIENTOS ---------- -->
     <section class="view" id="view-movimientos">
-      <div class="rowhead"><h2>Movimientos</h2>
-        <button class="btn-primary" id="btnAddExpense">+ Añadir gasto</button>
+      <div class="rowhead"><h2>Moviments</h2>
+        <button class="btn-primary" id="btnAddExpense">+ Afegeix despesa</button>
       </div>
       <div class="toolbar">
-        <input type="text" id="searchMov" placeholder="Buscar por concepto…">
-        <select id="filterCat"><option value="">Todas las categorías</option></select>
-        <select id="filterMonth"><option value="">Todos los meses</option></select>
+        <input type="text" id="searchMov" placeholder="Cerca per concepte…">
+        <select id="filterCat"><option value="">Totes les categories</option></select>
+        <select id="filterMonth"><option value="">Tots els mesos</option></select>
       </div>
       <div class="panel" style="padding:0;overflow-x:auto;">
         <table id="tblMov">
-          <thead><tr><th>Fecha</th><th>Concepto</th><th>Categoría</th><th>Cuenta</th><th style="text-align:right;">Importe</th><th></th></tr></thead>
+          <thead><tr><th>Data</th><th>Concepte</th><th>Categoria</th><th>Compte</th><th style="text-align:right;">Import</th><th></th></tr></thead>
           <tbody></tbody>
         </table>
-        <div class="empty" id="movEmpty" style="display:none;">No hay movimientos con estos filtros.</div>
+        <div class="empty" id="movEmpty" style="display:none;">No hi ha moviments amb aquests filtres.</div>
       </div>
     </section>
 
     <!-- ---------- IMPORTAR ---------- -->
     <section class="view" id="view-importar">
-      <div class="rowhead"><h2>Importar extracto</h2></div>
+      <div class="rowhead"><h2>Importa extracte</h2></div>
 
       <div class="panel" id="importStep1">
-        <h3>1. Sube el archivo</h3>
-        <p style="color:var(--muted);font-size:13.5px;margin-top:-6px;">Acepta .xlsx, .xls o .csv. Puede ser tu tracker actual o, más adelante, el extracto directo del banco.</p>
+        <h3>1. Puja l'arxiu</h3>
+        <p style="color:var(--muted);font-size:13.5px;margin-top:-6px;">Accepta .xlsx, .xls o .csv. Pot ser el teu tracker actual o, més endavant, l'extracte directe del banc.</p>
         <div class="mapgrid" style="margin-top:14px;">
-          <div><label>Cuenta destino</label>
-            <select id="importAccount"><option value="Conjunta">Conjunta</option><option value="Personal">Personal</option></select>
+          <div><label>Compte destí</label>
+            <select id="importAccount"><option value="Conjunta">Conjunt</option><option value="Personal">Personal</option></select>
           </div>
         </div>
-        <div class="dropzone" id="dropzone">Haz clic o arrastra el archivo aquí</div>
+        <div class="dropzone" id="dropzone">Toca o arrossega l'arxiu aquí</div>
         <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none;">
       </div>
 
       <div class="panel" id="importStep2" style="display:none;">
-        <h3>2. Elige las hojas a importar</h3>
+        <h3>2. Tria els fulls a importar</h3>
         <div class="sheetlist" id="sheetList"></div>
-        <button class="btn-primary" id="btnMapColumns">Continuar →</button>
+        <button class="btn-primary" id="btnMapColumns">Continua →</button>
       </div>
 
       <div class="panel" id="importStep3" style="display:none;">
-        <h3>3. Confirma las columnas</h3>
+        <h3>3. Confirma les columnes</h3>
         <div class="mapgrid">
-          <div><label>Fecha</label><select id="mapFecha"></select></div>
-          <div><label>Concepto</label><select id="mapConcepto"></select></div>
-          <div><label>Importe</label><select id="mapImporte"></select></div>
-          <div><label>Categoría (opcional)</label><select id="mapCategoria"><option value="">— sin mapear —</option></select></div>
+          <div><label>Data</label><select id="mapFecha"></select></div>
+          <div><label>Concepte</label><select id="mapConcepto"></select></div>
+          <div><label>Import</label><select id="mapImporte"></select></div>
+          <div><label>Categoria (opcional)</label><select id="mapCategoria"><option value="">— sense mapejar —</option></select></div>
         </div>
-        <button class="btn-primary" id="btnPreview">Ver preview →</button>
+        <button class="btn-primary" id="btnPreview">Veure vista prèvia →</button>
       </div>
 
       <div class="panel" id="importStep4" style="display:none;">
-        <h3>4. Revisa e importa</h3>
+        <h3>4. Revisa i importa</h3>
         <p style="color:var(--muted);font-size:13.5px;" id="previewSummary"></p>
         <div style="max-height:340px;overflow:auto;">
           <table id="tblPreview">
-            <thead><tr><th>Fecha</th><th>Concepto</th><th>Categoría</th><th style="text-align:right;">Importe</th><th>Estado</th></tr></thead>
+            <thead><tr><th>Data</th><th>Concepte</th><th>Categoria</th><th style="text-align:right;">Import</th><th>Estat</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
-        <button class="btn-primary" id="btnImport" style="margin-top:16px;">Importar movimientos nuevos</button>
+        <button class="btn-primary" id="btnImport" style="margin-top:16px;">Importa moviments nous</button>
       </div>
     </section>
 
     <!-- ---------- CATEGORIAS ---------- -->
     <section class="view" id="view-categorias">
-      <div class="rowhead"><h2>Categorías</h2>
-        <button class="btn-primary" id="btnAddCat">+ Nueva categoría</button>
+      <div class="rowhead"><h2>Categories</h2>
+        <button class="btn-primary" id="btnAddCat">+ Categoria nova</button>
       </div>
       <div class="panel">
         <div class="catlist" id="catList"></div>
@@ -361,9 +392,9 @@ let currentMonthKey = null; // 'YYYY-MM' selected in ledger strip
 let charts = {};
 
 const PALETTE = ['#c9a15a','#dd7860','#7ea888','#7ba7c9','#b98cc9','#c9c15a','#5ac9a1','#c95a8c','#a1785a','#5a8cc9','#c9785a','#8cc95a'];
-const DEFAULT_CATS = ['Lloguer','Hipoteca','Comunitat','Seguro de Llar','Alarma','Gas','Llum','Aigua','Basures','Residus','Clavagueres','IBI',
-  'Supermercat','Coses de casa','Neteja','Internet + TV','Gos','Cotxe','Benzina Cotxe','Moto','Benzina Moto','Revisions','Seguro','Credit',
-  'Oci','RENFE','Seguro de vida','Pagaments','Sin categorizar'];
+const DEFAULT_CATS = ['Lloguer','Hipoteca','Comunitat','Assegurança de la llar','Alarma','Gas','Llum','Aigua','Escombraries','Residus','Clavegueres','IBI',
+  'Supermercat','Coses de casa','Neteja','Internet + TV','Gos','Cotxe','Benzina cotxe','Moto','Benzina moto','Revisions','Assegurança','Crèdit',
+  'Oci','RENFE','Assegurança de vida','Pagaments','Sense categoritzar'];
 
 /* ============================================================
    SETUP / CONNECT
@@ -385,19 +416,19 @@ async function sbPost(path, body, prefer){
   const r = await fetch(SB_URL + '/rest/v1/' + path, {
     method:'POST', headers: sbHeaders({'Prefer': prefer || 'return=representation'}), body: JSON.stringify(body)
   });
-  if(!r.ok){ const t = await r.text(); throw new Error('Error al guardar: ' + t); }
+  if(!r.ok){ const t = await r.text(); throw new Error('Error en desar: ' + t); }
   return r.status === 204 ? null : r.json();
 }
 async function sbPatch(path, body){
   const r = await fetch(SB_URL + '/rest/v1/' + path, {
     method:'PATCH', headers: sbHeaders({'Prefer':'return=representation'}), body: JSON.stringify(body)
   });
-  if(!r.ok) throw new Error('Error al actualizar');
+  if(!r.ok) throw new Error('Error en actualitzar');
   return r.json();
 }
 async function sbDelete(path){
   const r = await fetch(SB_URL + '/rest/v1/' + path, { method:'DELETE', headers: sbHeaders() });
-  if(!r.ok) throw new Error('Error al borrar');
+  if(!r.ok) throw new Error('Error en esborrar');
 }
 
 document.getElementById('btnConnect').onclick = async () => {
@@ -405,30 +436,30 @@ document.getElementById('btnConnect').onclick = async () => {
   const key = document.getElementById('inKey').value.trim();
   const errEl = document.getElementById('setupErr');
   errEl.style.display='none';
-  if(!url || !key){ errEl.textContent='Rellena los dos campos.'; errEl.style.display='block'; return; }
+  if(!url || !key){ errEl.textContent='Omple els dos camps.'; errEl.style.display='block'; return; }
   const btn = document.getElementById('btnConnect');
-  btn.disabled = true; btn.textContent = 'Conectando…';
+  btn.disabled = true; btn.textContent = 'Connectant…';
   try{
-    const timeout = new Promise((_,rej)=>setTimeout(()=>rej(new Error('Tiempo de espera agotado (10s). Revisa la URL/clave o si el proyecto está pausado.')),10000));
+    const timeout = new Promise((_,rej)=>setTimeout(()=>rej(new Error('S\'ha esgotat el temps d\'espera (10s). Revisa la URL/clau o si el projecte està pausat.')),10000));
     const testHeaders = { apikey:key };
     if(key.startsWith('eyJ')) testHeaders.Authorization = 'Bearer '+key;
     const test = fetch(url + '/rest/v1/expenses?limit=1', { headers:testHeaders })
-      .then(r=>{ if(!r.ok && r.status!==404 && r.status!==400) throw new Error('Respuesta ' + r.status + '. ¿Ejecutaste el SQL de creación de tablas, o es la clave "anon/publishable" (no la secreta)?'); });
+      .then(r=>{ if(!r.ok && r.status!==404 && r.status!==400) throw new Error('Resposta ' + r.status + '. Has executat l\'SQL de creació de taules, o és la clau "anon/publishable" (no la secreta)?'); });
     await Promise.race([test, timeout]);
     localStorage.setItem('gh_sb_url', url);
     localStorage.setItem('gh_sb_key', key);
     SB_URL = url; SB_KEY = key;
     await boot();
   }catch(e){
-    errEl.textContent = 'Conexión fallida: ' + e.message;
+    errEl.textContent = 'Connexió fallida: ' + e.message;
     errEl.style.display = 'block';
   }finally{
-    btn.disabled = false; btn.textContent = 'Conectar →';
+    btn.disabled = false; btn.textContent = 'Connecta →';
   }
 };
 
 document.getElementById('btnReset').onclick = () => {
-  if(!confirm('¿Olvidar este proyecto de Supabase en este navegador?')) return;
+  if(!confirm('Vols oblidar aquest projecte de Supabase en aquest navegador?')) return;
   localStorage.removeItem('gh_sb_url'); localStorage.removeItem('gh_sb_key');
   location.reload();
 };
@@ -469,12 +500,12 @@ function toast(msg){
   clearTimeout(t._h); t._h = setTimeout(()=>t.style.display='none', 2600);
 }
 function fmtMoney(n){
-  return (n<0?'-':'') + Math.abs(n).toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' €';
+  return (n<0?'-':'') + Math.abs(n).toLocaleString('ca-ES',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' €';
 }
 function monthKey(dateStr){ return dateStr.slice(0,7); }
 function monthLabel(key){
   const [y,m] = key.split('-');
-  const names = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const names = ['Gen','Feb','Mar','Abr','Mai','Jun','Jul','Ago','Set','Oct','Nov','Des'];
   return names[parseInt(m,10)-1] + ' ' + y;
 }
 function filteredByAccount(list){
@@ -515,7 +546,7 @@ function renderDashboard(){
   });
   const months = Object.keys(byMonth).sort();
   if(months.length === 0){
-    document.getElementById('ledgerStrip').innerHTML = '<div class="empty">Todavía no hay movimientos. Ve a Importar o añade uno manualmente.</div>';
+    document.getElementById('ledgerStrip').innerHTML = '<div class="empty">Encara no hi ha moviments. Vés a Importar o afegeix-ne un manualment.</div>';
     ['kpiMonth','kpiAvg3','kpiAvg12','kpiTop'].forEach(id=>document.getElementById(id).textContent='–');
     if(charts.trend) charts.trend.destroy();
     if(charts.cat) charts.cat.destroy();
@@ -547,7 +578,7 @@ function renderDashboard(){
 
   const monthExpenses = data.filter(e=>monthKey(e.fecha)===currentMonthKey);
   const byCat = {};
-  monthExpenses.forEach(e=>{ const c=e.categoria||'Sin categorizar'; byCat[c]=(byCat[c]||0)+Number(e.importe); });
+  monthExpenses.forEach(e=>{ const c=e.categoria||'Sense categoritzar'; byCat[c]=(byCat[c]||0)+Number(e.importe); });
   const topCat = Object.entries(byCat).sort((a,b)=>b[1]-a[1])[0];
   document.getElementById('kpiTop').textContent = topCat ? topCat[0] + ' · ' + fmtMoney(topCat[1]) : '–';
 
@@ -559,7 +590,7 @@ function renderDashboard(){
       data: trendLabels.map(m=>byMonth[m]), borderColor:'#c9a15a', backgroundColor:'rgba(201,161,90,.12)',
       fill:true, tension:.3, pointRadius:3, pointBackgroundColor:'#c9a15a'
     }]},
-    options:{ plugins:{legend:{display:false}}, scales:{
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{
       x:{ticks:{color:'#8fa39a',font:{size:11}},grid:{color:'#28362f'}},
       y:{ticks:{color:'#8fa39a',font:{size:11}},grid:{color:'#28362f'}}
     }}
@@ -572,7 +603,7 @@ function renderDashboard(){
     data:{ labels: catSorted.map(c=>c[0]), datasets:[{
       data: catSorted.map(c=>c[1]), backgroundColor: catSorted.map(c=>catColor(c[0])), borderRadius:5
     }]},
-    options:{ indexAxis:'y', plugins:{legend:{display:false}}, scales:{
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{
       x:{ticks:{color:'#8fa39a',font:{size:11}},grid:{color:'#28362f'}},
       y:{ticks:{color:'#eef3ef',font:{size:12}},grid:{display:false}}
     }}
@@ -595,12 +626,12 @@ function initMovimientos(){
 }
 function renderMovimientos(){
   const catSel = document.getElementById('filterCat');
-  catSel.innerHTML = '<option value="">Todas las categorías</option>' + categories.map(c=>`<option value="${c.nombre}">${c.nombre}</option>`).join('');
+  catSel.innerHTML = '<option value="">Totes les categories</option>' + categories.map(c=>`<option value="${c.nombre}">${c.nombre}</option>`).join('');
   const monthSel = document.getElementById('filterMonth');
   const data0 = filteredByAccount(expenses);
   const months = [...new Set(data0.map(e=>monthKey(e.fecha)))].sort().reverse();
   const prevMonthVal = monthSel.value;
-  monthSel.innerHTML = '<option value="">Todos los meses</option>' + months.map(m=>`<option value="${m}">${monthLabel(m)}</option>`).join('');
+  monthSel.innerHTML = '<option value="">Tots els mesos</option>' + months.map(m=>`<option value="${m}">${monthLabel(m)}</option>`).join('');
   monthSel.value = prevMonthVal;
 
   const q = document.getElementById('searchMov').value.toLowerCase();
@@ -617,9 +648,9 @@ function renderMovimientos(){
   data.slice(0,500).forEach(e=>{
     const tr = document.createElement('tr');
     tr.innerHTML = `<td>${e.fecha}</td><td>${e.concepto||''}</td>
-      <td><span class="catpill"><span class="dot" style="background:${catColor(e.categoria)}"></span>${e.categoria||'Sin categorizar'}</span></td>
+      <td><span class="catpill"><span class="dot" style="background:${catColor(e.categoria)}"></span>${e.categoria||'Sense categoritzar'}</span></td>
       <td>${e.cuenta}</td><td class="num">${fmtMoney(e.importe)}</td>
-      <td class="rowactions"><button class="btn-ghost" data-edit="${e.id}">Editar</button><button class="btn-danger" data-del="${e.id}">✕</button></td>`;
+      <td class="rowactions"><button class="btn-ghost" data-edit="${e.id}">Edita</button><button class="btn-danger" data-del="${e.id}">✕</button></td>`;
     tbody.appendChild(tr);
   });
   tbody.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openExpenseModal(data.find(e=>e.id===b.dataset.edit)));
@@ -628,18 +659,18 @@ function renderMovimientos(){
 function openExpenseModal(exp){
   const isNew = !exp;
   openModal(`
-    <h3>${isNew?'Añadir gasto':'Editar gasto'}</h3>
-    <label>Fecha</label><input type="date" id="mFecha" value="${exp?exp.fecha:new Date().toISOString().slice(0,10)}">
-    <label>Concepto</label><input type="text" id="mConcepto" value="${exp?(exp.concepto||''):''}">
-    <label>Importe (€)</label><input type="number" step="0.01" id="mImporte" value="${exp?exp.importe:''}">
-    <label>Categoría</label><select id="mCategoria">${categories.map(c=>`<option value="${c.nombre}" ${exp&&exp.categoria===c.nombre?'selected':''}>${c.nombre}</option>`).join('')}</select>
-    <label>Cuenta</label><select id="mCuenta">
-      <option value="Conjunta" ${exp&&exp.cuenta==='Conjunta'?'selected':''}>Conjunta</option>
+    <h3>${isNew?'Afegeix despesa':'Edita despesa'}</h3>
+    <label>Data</label><input type="date" id="mFecha" value="${exp?exp.fecha:new Date().toISOString().slice(0,10)}">
+    <label>Concepte</label><input type="text" id="mConcepto" value="${exp?(exp.concepto||''):''}">
+    <label>Import (€)</label><input type="number" step="0.01" id="mImporte" value="${exp?exp.importe:''}">
+    <label>Categoria</label><select id="mCategoria">${categories.map(c=>`<option value="${c.nombre}" ${exp&&exp.categoria===c.nombre?'selected':''}>${c.nombre}</option>`).join('')}</select>
+    <label>Compte</label><select id="mCuenta">
+      <option value="Conjunta" ${exp&&exp.cuenta==='Conjunta'?'selected':''}>Conjunt</option>
       <option value="Personal" ${exp&&exp.cuenta==='Personal'?'selected':''}>Personal</option>
     </select>
     <div class="actions">
-      <button class="btn-ghost" onclick="closeModal()">Cancelar</button>
-      <button class="btn-primary" id="mSave">${isNew?'Añadir':'Guardar'}</button>
+      <button class="btn-ghost" onclick="closeModal()">Cancel·la</button>
+      <button class="btn-primary" id="mSave">${isNew?'Afegeix':'Desa'}</button>
     </div>
   `);
   document.getElementById('mSave').onclick = async () => {
@@ -648,23 +679,23 @@ function openExpenseModal(exp){
     const importe = parseFloat(document.getElementById('mImporte').value);
     const categoria = document.getElementById('mCategoria').value;
     const cuenta = document.getElementById('mCuenta').value;
-    if(!fecha || isNaN(importe)){ toast('Falta la fecha o el importe.'); return; }
+    if(!fecha || isNaN(importe)){ toast('Falta la data o l\'import.'); return; }
     if(isNew){
       const hash = await computeHash(fecha, importe, concepto, cuenta);
       try{
         await sbPost('expenses', [{fecha, concepto, importe, categoria, cuenta, origen:'manual', hash}], 'return=minimal');
-        toast('Gasto añadido');
-      }catch(e){ toast('No se pudo añadir (¿duplicado?)'); }
+        toast('Despesa afegida');
+      }catch(e){ toast('No s\'ha pogut afegir (duplicat?)'); }
     }else{
       await sbPatch('expenses?id=eq.'+exp.id, {fecha, concepto, importe, categoria, cuenta});
-      toast('Gasto actualizado');
+      toast('Despesa actualitzada');
     }
     closeModal();
     await loadExpenses(); renderMovimientos(); renderDashboard();
   };
 }
 async function deleteExpense(id){
-  if(!confirm('¿Borrar este movimiento?')) return;
+  if(!confirm('Vols esborrar aquest moviment?')) return;
   await sbDelete('expenses?id=eq.'+id);
   await loadExpenses(); renderMovimientos(); renderDashboard();
 }
@@ -701,7 +732,7 @@ function handleFile(file){
     const list = document.getElementById('sheetList');
     list.innerHTML = Object.keys(importParsed.sheets).map(name=>{
       const n = importParsed.sheets[name].length - 1;
-      return `<label><input type="checkbox" value="${name}" ${/pis|casa|movimiento|extracto/i.test(name)?'checked':''}> ${name} <span class="badge">${n} filas</span></label>`;
+      return `<label><input type="checkbox" value="${name}" ${/pis|casa|movimiento|extracto/i.test(name)?'checked':''}> ${name} <span class="badge">${n} files</span></label>`;
     }).join('');
     document.getElementById('importStep2').style.display='block';
   };
@@ -717,7 +748,7 @@ function guessCol(headers, keywords){
 }
 function showColumnMapping(){
   const chosen = [...document.querySelectorAll('#sheetList input:checked')].map(i=>i.value);
-  if(chosen.length===0){ toast('Elige al menos una hoja.'); return; }
+  if(chosen.length===0){ toast('Tria almenys un full.'); return; }
   importParsed.chosenSheets = chosen;
   // Merge rows from all chosen sheets, keep the header of the first
   let headers = importParsed.sheets[chosen[0]][0];
@@ -737,7 +768,7 @@ function showColumnMapping(){
   document.getElementById('mapFecha').innerHTML = options;
   document.getElementById('mapConcepto').innerHTML = options;
   document.getElementById('mapImporte').innerHTML = options;
-  document.getElementById('mapCategoria').innerHTML = '<option value="">— sin mapear —</option>' + options;
+  document.getElementById('mapCategoria').innerHTML = '<option value="">— sense mapejar —</option>' + options;
 
   const iFecha = guessCol(headers, ['fecha','operaci','date']);
   const iConcepto = guessCol(headers, ['concepto','descripcion','concept']);
@@ -808,38 +839,38 @@ async function buildPreview(){
   parsedRows.sort((a,b)=>a.fecha<b.fecha?1:-1);
   importParsed.preview = parsedRows;
   const nNew = parsedRows.filter(r=>!r.dup).length;
-  document.getElementById('previewSummary').textContent = `${parsedRows.length} filas leídas · ${nNew} nuevas · ${parsedRows.length-nNew} ya existentes (se omitirán).`;
+  document.getElementById('previewSummary').textContent = `${parsedRows.length} files llegides · ${nNew} noves · ${parsedRows.length-nNew} ja existents (s'ometran).`;
   const tbody = document.querySelector('#tblPreview tbody');
   tbody.innerHTML = parsedRows.slice(0,300).map(r=>`
     <tr>
       <td>${r.fecha}</td><td>${r.concepto}</td>
-      <td><span class="catpill"><span class="dot" style="background:${catColor(r.categoria)||'#5a6b62'}"></span>${r.categoria||'Sin categorizar'}</span></td>
+      <td><span class="catpill"><span class="dot" style="background:${catColor(r.categoria)||'#5a6b62'}"></span>${r.categoria||'Sense categoritzar'}</span></td>
       <td class="num">${fmtMoney(r.importe)}</td>
-      <td><span class="badge ${r.dup?'dup':'new'}">${r.dup?'Ya existe':'Nueva'}</span></td>
+      <td><span class="badge ${r.dup?'dup':'new'}">${r.dup?'Ja existeix':'Nova'}</span></td>
     </tr>`).join('');
   document.getElementById('importStep4').style.display='block';
 }
 async function runImport(){
   const toInsert = importParsed.preview.filter(r=>!r.dup).map(({dup, ...rest})=>rest);
-  if(toInsert.length===0){ toast('No hay filas nuevas que importar.'); return; }
+  if(toInsert.length===0){ toast('No hi ha files noves per importar.'); return; }
   const missingCats = [...new Set(toInsert.map(r=>r.categoria).filter(c=>c && !categories.find(cc=>cc.nombre===c)))];
   if(missingCats.length){
     const seed = missingCats.map((n,i)=>({nombre:n, color:PALETTE[(categories.length+i)%PALETTE.length], orden:categories.length+i}));
     await sbPost('categories', seed, 'return=minimal');
   }
   const btn = document.getElementById('btnImport');
-  btn.disabled = true; btn.textContent = 'Importando…';
+  btn.disabled = true; btn.textContent = 'Important…';
   try{
     const chunkSize = 200;
     for(let i=0;i<toInsert.length;i+=chunkSize){
       await sbPost('expenses', toInsert.slice(i,i+chunkSize), 'return=minimal,resolution=ignore-duplicates');
     }
-    toast(`${toInsert.length} movimientos importados`);
+    toast(`${toInsert.length} moviments importats`);
     await ensureCategories(); await loadExpenses();
     renderDashboard(); renderMovimientos(); renderCategorias();
     ['importStep2','importStep3','importStep4'].forEach(id=>document.getElementById(id).style.display='none');
-  }catch(e){ toast('Error al importar: ' + e.message); }
-  finally{ btn.disabled = false; btn.textContent = 'Importar movimientos nuevos'; }
+  }catch(e){ toast('Error en importar: ' + e.message); }
+  finally{ btn.disabled = false; btn.textContent = 'Importa moviments nous'; }
 }
 
 /* ============================================================
@@ -847,10 +878,10 @@ async function runImport(){
    ============================================================ */
 function initCategorias(){
   document.getElementById('btnAddCat').onclick = () => {
-    openModal(`<h3>Nueva categoría</h3>
-      <label>Nombre</label><input type="text" id="cName">
+    openModal(`<h3>Categoria nova</h3>
+      <label>Nom</label><input type="text" id="cName">
       <label>Color</label><input type="color" id="cColor" value="#c9a15a">
-      <div class="actions"><button class="btn-ghost" onclick="closeModal()">Cancelar</button><button class="btn-primary" id="cSave">Crear</button></div>`);
+      <div class="actions"><button class="btn-ghost" onclick="closeModal()">Cancel·la</button><button class="btn-primary" id="cSave">Crea</button></div>`);
     document.getElementById('cSave').onclick = async () => {
       const nombre = document.getElementById('cName').value.trim();
       const color = document.getElementById('cColor').value;
@@ -866,14 +897,14 @@ function renderCategorias(){
     <div class="catrow">
       <input type="color" value="${c.color}" data-color="${c.nombre}">
       <div class="name">${c.nombre}</div>
-      <button class="btn-danger" data-delcat="${c.nombre}">Eliminar</button>
+      <button class="btn-danger" data-delcat="${c.nombre}">Elimina</button>
     </div>`).join('');
   list.querySelectorAll('[data-color]').forEach(inp=>{
     inp.onchange = async () => { await sbPatch('categories?nombre=eq.'+encodeURIComponent(inp.dataset.color), {color:inp.value}); await ensureCategories(); renderDashboard(); renderMovimientos(); };
   });
   list.querySelectorAll('[data-delcat]').forEach(btn=>{
     btn.onclick = async () => {
-      if(!confirm('Eliminar categoría "'+btn.dataset.delcat+'"? Los gastos existentes la conservarán como texto.')) return;
+      if(!confirm('Vols eliminar la categoria "'+btn.dataset.delcat+'"? Les despeses existents la conservaran com a text.')) return;
       await sbDelete('categories?nombre=eq.'+encodeURIComponent(btn.dataset.delcat));
       await ensureCategories(); renderCategorias();
     };
