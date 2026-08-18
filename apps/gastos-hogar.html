@@ -369,11 +369,12 @@ const DEFAULT_CATS = ['Lloguer','Hipoteca','Comunitat','Seguro de Llar','Alarma'
    SETUP / CONNECT
    ============================================================ */
 function sbHeaders(extra){
-  return Object.assign({
-    'apikey': SB_KEY,
-    'Authorization': 'Bearer ' + SB_KEY,
-    'Content-Type': 'application/json'
-  }, extra||{});
+  // Legacy anon keys are JWTs (start with "eyJ") and need "Authorization: Bearer <jwt>".
+  // New publishable/secret keys (sb_publishable_... / sb_secret_...) are NOT JWTs and
+  // must only go in the apikey header; sending them as a Bearer token causes auth errors.
+  const base = { 'apikey': SB_KEY, 'Content-Type': 'application/json' };
+  if(SB_KEY.startsWith('eyJ')) base['Authorization'] = 'Bearer ' + SB_KEY;
+  return Object.assign(base, extra||{});
 }
 async function sbGet(path){
   const r = await fetch(SB_URL + '/rest/v1/' + path, { headers: sbHeaders() });
@@ -409,8 +410,10 @@ document.getElementById('btnConnect').onclick = async () => {
   btn.disabled = true; btn.textContent = 'Conectando…';
   try{
     const timeout = new Promise((_,rej)=>setTimeout(()=>rej(new Error('Tiempo de espera agotado (10s). Revisa la URL/clave o si el proyecto está pausado.')),10000));
-    const test = fetch(url + '/rest/v1/expenses?limit=1', { headers:{ apikey:key, Authorization:'Bearer '+key } })
-      .then(r=>{ if(!r.ok && r.status!==404 && r.status!==400) throw new Error('Respuesta ' + r.status + '. ¿Ejecutaste el SQL de creación de tablas?'); });
+    const testHeaders = { apikey:key };
+    if(key.startsWith('eyJ')) testHeaders.Authorization = 'Bearer '+key;
+    const test = fetch(url + '/rest/v1/expenses?limit=1', { headers:testHeaders })
+      .then(r=>{ if(!r.ok && r.status!==404 && r.status!==400) throw new Error('Respuesta ' + r.status + '. ¿Ejecutaste el SQL de creación de tablas, o es la clave "anon/publishable" (no la secreta)?'); });
     await Promise.race([test, timeout]);
     localStorage.setItem('gh_sb_url', url);
     localStorage.setItem('gh_sb_key', key);
