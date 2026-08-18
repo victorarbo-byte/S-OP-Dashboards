@@ -376,7 +376,7 @@ grant all on categories to anon;</pre>
   <div class="modal" id="modalBody"></div>
 </div>
 <div class="toast" id="toast"></div>
-<div style="position:fixed;bottom:4px;right:6px;font-size:9px;color:#556058;z-index:999;pointer-events:none;">build-4</div>
+<div style="position:fixed;bottom:4px;right:6px;font-size:9px;color:#556058;z-index:999;pointer-events:none;">build-5</div>
 
 <script>
 /* ============================================================
@@ -466,16 +466,27 @@ document.getElementById('btnReset').onclick = () => {
 async function boot(){
   document.getElementById('setup').style.display='none';
   document.getElementById('app').style.display='block';
-  await ensureCategories();
-  await loadExpenses();
-  initTabs();
-  initMovimientos();
-  initImportar();
-  initCategorias();
-  document.getElementById('globalAccount').onchange = () => { renderDashboard(); renderMovimientos(); };
-  renderDashboard();
-  renderMovimientos();
-  renderCategorias();
+  try{
+    await ensureCategories();
+    await loadExpenses();
+    initTabs();
+    initMovimientos();
+    initImportar();
+    initCategorias();
+    document.getElementById('globalAccount').onchange = () => { renderDashboard(); renderMovimientos(); };
+    renderDashboard();
+    renderMovimientos();
+    renderCategorias();
+  }catch(e){
+    document.querySelector('main').insertAdjacentHTML('afterbegin',
+      `<div class="panel" style="border-color:var(--danger);">
+        <h3 style="color:var(--danger);">No s'ha pogut carregar l'app</h3>
+        <p style="color:var(--muted);font-size:13.5px;">Detall tècnic: ${(e && e.message) || e}</p>
+        <p style="color:var(--muted);font-size:13.5px;">Comprova que les taules "expenses" i "categories" existeixen a Supabase i tenen els permisos "anon" concedits.</p>
+      </div>`);
+    // Still wire up navigation so the person isn't stuck even if data loading failed
+    initTabs();
+  }
 }
 
 async function ensureCategories(){
