@@ -453,7 +453,7 @@ grant all on categories to anon;</pre>
   <div class="modal" id="modalBody"></div>
 </div>
 <div class="toast" id="toast"></div>
-<div style="position:fixed;bottom:4px;right:6px;font-size:9px;color:#556058;z-index:999;pointer-events:none;">build-21</div>
+<div style="position:fixed;bottom:4px;right:6px;font-size:9px;color:#556058;z-index:999;pointer-events:none;">build-22</div>
 
 <script>
 /* ============================================================
@@ -649,6 +649,7 @@ const CAT_ICONS = {
 function iconFor(cat){ return CAT_ICONS[cat] || '🏷️'; }
 
 let selectedYears = null; // null = all years; otherwise array of 'YYYY' strings
+let yearsDefaultApplied = false; // ensures the 2026-by-default only kicks in once, not after the user changes it
 
 function openYearPicker(){
   const data = filteredByAccount(expenses);
@@ -753,6 +754,10 @@ function renderDashboard(){
 
   const allMonths = [...new Set(data.map(e=>monthKey(e.fecha)))].sort();
   const allYears = [...new Set(data.map(e=>e.fecha.slice(0,4)))].sort();
+  if(!yearsDefaultApplied){
+    yearsDefaultApplied = true;
+    if(allYears.includes('2026')) selectedYears = ['2026'];
+  }
   if(selectedYears){ selectedYears = selectedYears.filter(y=>allYears.includes(y)); if(selectedYears.length===0) selectedYears=null; }
   const isTotal = !selectedYears;
 
