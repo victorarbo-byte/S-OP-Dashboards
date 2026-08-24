@@ -325,6 +325,7 @@ grant all on categories to anon;</pre>
         <option value="Conjunta">Conjunt</option>
         <option value="Personal">Personal</option>
       </select>
+      <button class="btn-ghost" id="btnShare" title="Comparteix accés">🔗</button>
       <button class="btn-ghost" id="btnReset" title="Canvia de projecte">⚙︎</button>
     </div>
 
@@ -452,7 +453,7 @@ grant all on categories to anon;</pre>
   <div class="modal" id="modalBody"></div>
 </div>
 <div class="toast" id="toast"></div>
-<div style="position:fixed;bottom:4px;right:6px;font-size:9px;color:#556058;z-index:999;pointer-events:none;">build-20</div>
+<div style="position:fixed;bottom:4px;right:6px;font-size:9px;color:#556058;z-index:999;pointer-events:none;">build-21</div>
 
 <script>
 /* ============================================================
@@ -551,6 +552,19 @@ async function boot(){
     initImportar();
     initCategorias();
     document.getElementById('globalAccount').onchange = () => { renderDashboard(); renderMovimientos(); };
+    document.getElementById('btnShare').onclick = () => {
+      const link = location.origin + location.pathname + '?sb_url=' + encodeURIComponent(SB_URL) + '&sb_key=' + encodeURIComponent(SB_KEY);
+      if(navigator.share){
+        navigator.share({ title: 'Accés Llibre de Despeses', url: link }).catch(()=>{});
+      }else{
+        openModal(`
+          <h3>Enllaç per compartir</h3>
+          <p style="color:var(--muted);font-size:13px;">Envia'l només a qui vulguis que tingui accés — dona accés complet a les dades. En obrir-lo, quedarà connectat automàticament en aquell dispositiu.</p>
+          <textarea readonly style="height:90px;font-size:12px;" onclick="this.select()">${link}</textarea>
+          <div class="actions"><button class="btn-ghost" onclick="closeModal()">Tanca</button></div>
+        `);
+      }
+    };
     renderDashboard();
     renderMovimientos();
     renderCategorias();
@@ -1120,6 +1134,21 @@ function renderCategorias(){
 /* ============================================================
    INIT
    ============================================================ */
+// One-time shareable link support: https://.../gastos-hogar.html?sb_url=...&sb_key=...
+// If present, save to this browser's localStorage and clean the URL so the key isn't left in history/bookmarks.
+(function(){
+  const params = new URLSearchParams(location.search);
+  const urlParam = params.get('sb_url');
+  const keyParam = params.get('sb_key');
+  if(urlParam && keyParam){
+    localStorage.setItem('gh_sb_url', urlParam.replace(/\/$/,''));
+    localStorage.setItem('gh_sb_key', keyParam);
+    SB_URL = urlParam.replace(/\/$/,'');
+    SB_KEY = keyParam;
+    history.replaceState({}, '', location.pathname);
+  }
+})();
+
 if(SB_URL && SB_KEY){ boot(); }
 else{ document.getElementById('inUrl').value=''; }
 </script>
