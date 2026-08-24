@@ -159,6 +159,73 @@
   .toast{position:fixed;bottom:22px;right:22px;background:var(--surface-2);border:1px solid var(--gold);color:var(--text);
     padding:12px 18px;border-radius:10px;font-size:13.5px;z-index:60;display:none;}
 
+  .rankrow{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);}
+  .rankrow:last-child{border-bottom:none;}
+  .rankrow .rname{width:150px;flex-shrink:0;font-size:13px;display:flex;align-items:center;gap:7px;}
+  .rankrow .rname .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .rankrow .rbar-wrap{flex:1;background:var(--surface-2);border-radius:5px;height:16px;overflow:hidden;}
+  .rankrow .rbar{height:100%;border-radius:5px;}
+  .rankrow .ramt{width:80px;flex-shrink:0;text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12.5px;}
+  @media(max-width:520px){
+    .rankrow .rname{width:100px;font-size:12px;}
+    .rankrow .ramt{width:66px;font-size:11.5px;}
+  }
+
+  /* ---------- Mobile-finance-app dashboard ---------- */
+  .monthnav{display:flex;align-items:center;justify-content:center;gap:18px;margin-bottom:18px;}
+  .monthnav .mnbtn{
+    background:var(--surface);border:1px solid var(--line);color:var(--text);width:36px;height:36px;
+    border-radius:50%;font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;
+  }
+  .monthnav .mnbtn:active{background:var(--surface-2);}
+  .monthnav-label{font-family:'Fraunces',serif;font-size:19px;min-width:150px;text-align:center;text-transform:capitalize;cursor:pointer;}
+  .yearpicker-btn{
+    background:var(--surface);border:1px solid var(--line);color:var(--text);
+    padding:9px 18px;border-radius:20px;font-family:'Fraunces',serif;font-size:16px;cursor:pointer;
+  }
+  .yearpicker-btn:active{background:var(--surface-2);}
+
+  .yearchips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;}
+  .yearchip{
+    background:var(--surface-2);border:1.5px solid var(--line);color:var(--text);
+    padding:9px 16px;border-radius:20px;font-size:14px;font-weight:500;
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .yearchip.selected{background:var(--gold);border-color:var(--gold);color:#1a1408;font-weight:600;}
+  .yearchip:active{opacity:.8;}
+
+  .hero{text-align:center;margin-bottom:20px;}
+  .hero-amount{font-family:'IBM Plex Mono',monospace;font-size:40px;font-weight:600;color:var(--text);letter-spacing:-.01em;}
+  .hero-compare{font-size:13px;margin-top:6px;color:var(--muted);}
+  .hero-compare.up{color:var(--coral);}
+  .hero-compare.down{color:var(--sage);}
+
+  .donutzone{display:flex;justify-content:center;margin-bottom:22px;}
+  .donutwrap{position:relative;width:220px;height:220px;}
+  .donut-center{
+    position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    pointer-events:none;
+  }
+  .donut-center-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
+  .donut-center-amount{font-family:'IBM Plex Mono',monospace;font-size:18px;margin-top:2px;}
+
+  .catlist2{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:6px 16px;margin-bottom:20px;}
+  .catrow2{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);cursor:pointer;}
+  .catrow2:active{background:var(--surface-2);}
+  .catrow2.active{background:var(--surface-2);margin:0 -16px;padding:12px 16px;border-radius:8px;border-bottom-color:transparent;}
+  .catrow2:last-child{border-bottom:none;}
+  .catrow2 .cicon{
+    width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;
+    font-size:18px;flex-shrink:0;
+  }
+  .catrow2 .cinfo{flex:1;min-width:0;}
+  .catrow2 .cname{font-size:14.5px;font-weight:500;}
+  .catrow2 .cbar-wrap{background:var(--surface-2);border-radius:4px;height:5px;margin-top:6px;overflow:hidden;}
+  .catrow2 .cbar{height:100%;border-radius:4px;}
+  .catrow2 .camt{text-align:right;flex-shrink:0;}
+  .catrow2 .camt .val{font-family:'IBM Plex Mono',monospace;font-size:14px;}
+  .catrow2 .camt .pct{font-size:11px;color:var(--muted);margin-top:2px;}
+
   .topbar{
     display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-bottom:18px;
   }
@@ -263,33 +330,42 @@ grant all on categories to anon;</pre>
 
     <!-- ---------- DASHBOARD ---------- -->
     <section class="view active" id="view-dashboard">
-      <div class="rowhead">
-        <h2>Resum</h2>
-        <div class="filters">
-          <select id="dashYear"></select>
+      <div class="monthnav">
+        <button class="yearpicker-btn" id="yearPickerBtn">Tots els anys ▾</button>
+      </div>
+
+      <div class="hero">
+        <div class="hero-amount" id="heroTotal">–</div>
+        <div class="hero-compare" id="heroCompare"></div>
+      </div>
+
+      <div class="donutzone">
+        <div class="donutwrap">
+          <canvas id="chartDonut"></canvas>
+          <div class="donut-center">
+            <div class="donut-center-label">Mitjana/mes</div>
+            <div class="donut-center-amount" id="donutCenterAmount">–</div>
+          </div>
         </div>
       </div>
 
-      <div class="ledger" id="ledgerStrip"></div>
-
-      <div class="kpis">
-        <div class="kpi"><div class="label">Mes seleccionat</div><div class="value gold mono" id="kpiMonth">–</div></div>
-        <div class="kpi"><div class="label">Mitjana últims 3 mesos</div><div class="value mono" id="kpiAvg3">–</div></div>
-        <div class="kpi"><div class="label">Mitjana últims 12 mesos</div><div class="value mono" id="kpiAvg12">–</div></div>
-        <div class="kpi"><div class="label">Categoria amb més despesa</div><div class="value coral" id="kpiTop" style="font-size:16px;">–</div></div>
-      </div>
+      <div class="catlist2" id="catListDash"></div>
 
       <div class="panel">
-        <h3>Evolució mensual</h3>
-        <div style="position:relative;height:200px;">
-          <canvas id="chartTrend"></canvas>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;">
+          <h3 id="evoTitle" style="margin:0;">Evolució del total</h3>
+          <div style="text-align:right;">
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">Mitjana/mes</div>
+            <div class="mono" id="evoAvgKpi" style="font-size:14px;color:var(--gold);">–</div>
+          </div>
         </div>
-      </div>
-
-      <div class="panel">
-        <h3>Per categoria (mes seleccionat)</h3>
-        <div style="position:relative;height:240px;">
-          <canvas id="chartCat"></canvas>
+        <div style="display:flex;">
+          <div id="evoAxisLabels" style="width:52px;flex-shrink:0;height:220px;position:relative;"></div>
+          <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;flex:1;min-width:0;">
+            <div style="position:relative;height:220px;" id="evoChartWrap">
+              <canvas id="chartEvo2"></canvas>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -376,7 +452,7 @@ grant all on categories to anon;</pre>
   <div class="modal" id="modalBody"></div>
 </div>
 <div class="toast" id="toast"></div>
-<div style="position:fixed;bottom:4px;right:6px;font-size:9px;color:#556058;z-index:999;pointer-events:none;">build-5</div>
+<div style="position:fixed;bottom:4px;right:6px;font-size:9px;color:#556058;z-index:999;pointer-events:none;">build-20</div>
 
 <script>
 /* ============================================================
@@ -387,7 +463,6 @@ let SB_KEY = localStorage.getItem('gh_sb_key') || '';
 let expenses = [];
 let categories = [];
 let importParsed = { sheets:{}, chosenSheets:[], rows:[], headers:[], mapping:{} };
-let currentMonthKey = null; // 'YYYY-MM' selected in ledger strip
 let charts = {};
 
 const PALETTE = ['#c9a15a','#dd7860','#7ea888','#7ba7c9','#b98cc9','#c9c15a','#5ac9a1','#c95a8c','#a1785a','#5a8cc9','#c9785a','#8cc95a'];
@@ -416,14 +491,16 @@ async function sbPost(path, body, prefer){
     method:'POST', headers: sbHeaders({'Prefer': prefer || 'return=representation'}), body: JSON.stringify(body)
   });
   if(!r.ok){ const t = await r.text(); throw new Error('Error en desar: ' + t); }
-  return r.status === 204 ? null : r.json();
+  const raw = await r.text();
+  return raw ? JSON.parse(raw) : null;
 }
 async function sbPatch(path, body){
   const r = await fetch(SB_URL + '/rest/v1/' + path, {
     method:'PATCH', headers: sbHeaders({'Prefer':'return=representation'}), body: JSON.stringify(body)
   });
   if(!r.ok) throw new Error('Error en actualitzar');
-  return r.json();
+  const raw = await r.text();
+  return raw ? JSON.parse(raw) : null;
 }
 async function sbDelete(path){
   const r = await fetch(SB_URL + '/rest/v1/' + path, { method:'DELETE', headers: sbHeaders() });
@@ -547,82 +624,201 @@ document.getElementById('modalBg').addEventListener('click', e=>{ if(e.target.id
 /* ============================================================
    DASHBOARD
    ============================================================ */
-function renderDashboard(){
+const CAT_ICONS = {
+  'Lloguer':'🏠','Hipoteca':'🏦','Comunitat':'🏢','Assegurança de la llar':'🛡️','Alarma':'🚨',
+  'Gas':'🔥','Llum':'💡','Aigua':'💧','Escombraries':'🗑️','Residus':'♻️','Clavegueres':'🚰','IBI':'🧾',
+  'Supermercat':'🛒','Coses de casa':'🧺','Neteja':'🧹','Internet + TV':'📶','Gos':'🐕',
+  'Benzina cotxe':'⛽','Assegurança cotxe':'🚙','Revisions cotxe':'🔧','Crèdit cotxe':'💳',
+  'Benzina moto':'⛽','Assegurança moto':'🏍️','Revisions moto':'🔧','Crèdit moto':'💳',
+  'Oci':'🎉','RENFE':'🚆','Assegurança de vida':'❤️','Pagaments':'💸','Sense categoritzar':'❔','Altres':'📦'
+};
+function iconFor(cat){ return CAT_ICONS[cat] || '🏷️'; }
+
+let selectedYears = null; // null = all years; otherwise array of 'YYYY' strings
+
+function openYearPicker(){
   const data = filteredByAccount(expenses);
-  const byMonth = {};
-  data.forEach(e=>{
-    const k = monthKey(e.fecha);
-    byMonth[k] = (byMonth[k]||0) + Number(e.importe);
+  const years = [...new Set(data.map(e=>e.fecha.slice(0,4)))].sort();
+  const checked = selectedYears || years;
+  openModal(`
+    <h3>Selecciona anys</h3>
+    <p style="color:var(--muted);font-size:13px;margin:-8px 0 16px;">Toca els que vulguis comparar</p>
+    <div class="yearchips" id="yearChips">
+      ${years.map(y=>`<button type="button" class="yearchip${checked.includes(y)?' selected':''}" data-year="${y}">${y}</button>`).join('')}
+    </div>
+    <div class="actions" style="justify-content:space-between;">
+      <div style="display:flex;gap:8px;">
+        <button class="btn-ghost" id="yearSelectAll">Tots</button>
+        <button class="btn-ghost" id="yearSelectNone">Cap</button>
+      </div>
+      <button class="btn-primary" id="yearApply">Aplica</button>
+    </div>
+  `);
+  document.querySelectorAll('#yearChips .yearchip').forEach(chip=>{
+    chip.onclick = () => chip.classList.toggle('selected');
   });
-  const months = Object.keys(byMonth).sort();
-  if(months.length === 0){
-    document.getElementById('ledgerStrip').innerHTML = '<div class="empty">Encara no hi ha moviments. Vés a Importar o afegeix-ne un manualment.</div>';
-    ['kpiMonth','kpiAvg3','kpiAvg12','kpiTop'].forEach(id=>document.getElementById(id).textContent='–');
-    if(charts.trend) charts.trend.destroy();
-    if(charts.cat) charts.cat.destroy();
+  document.getElementById('yearSelectAll').onclick = () => {
+    document.querySelectorAll('#yearChips .yearchip').forEach(c=>c.classList.add('selected'));
+  };
+  document.getElementById('yearSelectNone').onclick = () => {
+    document.querySelectorAll('#yearChips .yearchip').forEach(c=>c.classList.remove('selected'));
+  };
+  document.getElementById('yearApply').onclick = () => {
+    const picked = [...document.querySelectorAll('#yearChips .yearchip.selected')].map(c=>c.dataset.year);
+    selectedYears = (picked.length===0 || picked.length===years.length) ? null : picked.sort();
+    closeModal();
+    renderDashboard();
+  };
+}
+
+let evoCategory = null; // null = overall total; otherwise a category name
+
+function renderEvoChart(data, months){
+  document.getElementById('evoTitle').textContent = evoCategory
+    ? `${iconFor(evoCategory)} Evolució: ${evoCategory}`
+    : 'Evolució del període';
+
+  if(!months || months.length===0){
+    document.getElementById('evoAvgKpi').textContent = '–';
+    if(charts.evo2) charts.evo2.destroy();
     return;
   }
-  if(!currentMonthKey || !byMonth[currentMonthKey]) currentMonthKey = months[months.length-1];
 
-  const last12 = months.slice(-12);
-  const max = Math.max(...last12.map(m=>byMonth[m]));
-  const strip = document.getElementById('ledgerStrip');
-  strip.innerHTML = '';
-  last12.forEach(m=>{
-    const h = Math.max(6, Math.round((byMonth[m]/max)*54));
-    const el = document.createElement('div');
-    el.className = 'stamp' + (m===currentMonthKey?' sel':'');
-    el.innerHTML = `<div class="bar" style="height:${h}px;"></div><div class="mon">${monthLabel(m).split(' ')[0]}</div><div class="amt">${Math.round(byMonth[m])}€</div>`;
-    el.onclick = () => { currentMonthKey = m; renderDashboard(); };
-    strip.appendChild(el);
-  });
+  const filtered = evoCategory ? data.filter(e => (e.categoria||'Sense categoritzar') === evoCategory) : data;
+  const byMonth = {};
+  filtered.forEach(e=>{ const mk = monthKey(e.fecha); byMonth[mk] = (byMonth[mk]||0) + Number(e.importe); });
 
-  document.getElementById('kpiMonth').textContent = fmtMoney(byMonth[currentMonthKey]||0) + ' · ' + monthLabel(currentMonthKey);
-  const idx = months.indexOf(currentMonthKey);
-  const prev3 = months.slice(Math.max(0,idx-2), idx+1);
-  const prev12 = months.slice(Math.max(0,idx-11), idx+1);
-  const avg3 = prev3.reduce((s,m)=>s+byMonth[m],0)/prev3.length;
-  const avg12 = prev12.reduce((s,m)=>s+byMonth[m],0)/prev12.length;
-  document.getElementById('kpiAvg3').textContent = fmtMoney(avg3);
-  document.getElementById('kpiAvg12').textContent = fmtMoney(avg12);
+  const total = months.reduce((s,mo)=>s+(byMonth[mo]||0), 0);
+  document.getElementById('evoAvgKpi').textContent = fmtMoney(total / months.length);
 
-  const monthExpenses = data.filter(e=>monthKey(e.fecha)===currentMonthKey);
-  const byCat = {};
-  monthExpenses.forEach(e=>{ const c=e.categoria||'Sense categoritzar'; byCat[c]=(byCat[c]||0)+Number(e.importe); });
-  const topCat = Object.entries(byCat).sort((a,b)=>b[1]-a[1])[0];
-  document.getElementById('kpiTop').textContent = topCat ? topCat[0] + ' · ' + fmtMoney(topCat[1]) : '–';
+  const values = months.map(mo=>byMonth[mo]||0);
+  const dataColor = evoCategory ? catColor(evoCategory) : '#c9a15a';
+  const fmtShort = v => v>=1000 ? (v/1000).toLocaleString('ca-ES',{maximumFractionDigits:1})+'k' : Math.round(v);
 
-  const trendLabels = months.slice(-24);
-  if(charts.trend) charts.trend.destroy();
-  charts.trend = new Chart(document.getElementById('chartTrend'), {
-    type:'line',
-    data:{ labels: trendLabels.map(monthLabel), datasets:[{
-      data: trendLabels.map(m=>byMonth[m]), borderColor:'#c9a15a', backgroundColor:'rgba(201,161,90,.12)',
-      fill:true, tension:.3, pointRadius:3, pointBackgroundColor:'#c9a15a'
-    }]},
-    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{
-      x:{ticks:{color:'#8fa39a',font:{size:11}},grid:{color:'#28362f'}},
-      y:{ticks:{color:'#8fa39a',font:{size:11}},grid:{color:'#28362f'}}
-    }}
-  });
+  document.getElementById('evoChartWrap').style.minWidth = months.length > 14 ? (months.length*36)+'px' : '100%';
 
-  const catSorted = Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
-  if(charts.cat) charts.cat.destroy();
-  charts.cat = new Chart(document.getElementById('chartCat'), {
+  if(charts.evo2) charts.evo2.destroy();
+  charts.evo2 = new Chart(document.getElementById('chartEvo2'), {
     type:'bar',
-    data:{ labels: catSorted.map(c=>c[0]), datasets:[{
-      data: catSorted.map(c=>c[1]), backgroundColor: catSorted.map(c=>catColor(c[0])), borderRadius:5
-    }]},
-    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{
-      x:{ticks:{color:'#8fa39a',font:{size:11}},grid:{color:'#28362f'}},
-      y:{ticks:{color:'#eef3ef',font:{size:12}},grid:{display:false}}
-    }}
+    data:{ labels: months.map(monthLabel), datasets:[{ data: values, backgroundColor: dataColor, borderRadius:4 }]},
+    options:{
+      responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{color:'#8fa39a',font:{size:10}},grid:{display:false}},
+        y:{
+          beginAtZero:true,
+          ticks:{ display:false },
+          grid:{ display:true, color:'#28362f', drawTicks:false }
+        }
+      }
+    }
   });
 
-  const ySel = document.getElementById('dashYear');
-  const years = [...new Set(months.map(m=>m.slice(0,4)))];
-  ySel.innerHTML = years.map(y=>`<option value="${y}">${y}</option>`).join('');
-  ySel.value = currentMonthKey.slice(0,4);
+  // Draw the y-axis numbers as plain HTML, fixed outside the scroll area,
+  // positioned using the chart's own computed pixel coordinates so they line up exactly.
+  const yScale = charts.evo2.scales.y;
+  const axisEl = document.getElementById('evoAxisLabels');
+  axisEl.innerHTML = yScale.ticks.map(t => {
+    const py = yScale.getPixelForValue(t.value);
+    return `<div style="position:absolute;top:${py-7}px;right:8px;font-size:11px;font-family:'IBM Plex Mono',monospace;color:#c8d6cf;">${fmtShort(t.value)}</div>`;
+  }).join('');
+}
+
+function renderDashboard(){
+  const data = filteredByAccount(expenses);
+
+  if(data.length === 0){
+    document.getElementById('heroTotal').textContent = '–';
+    document.getElementById('heroCompare').textContent = '';
+    document.getElementById('yearPickerBtn').textContent = 'Tots els anys ▾';
+    document.getElementById('donutCenterAmount').textContent = '–';
+    document.getElementById('catListDash').innerHTML = '<div class="empty">Encara no hi ha moviments. Vés a Importar o afegeix-ne un manualment.</div>';
+    if(charts.donut) charts.donut.destroy();
+    return;
+  }
+
+  const allMonths = [...new Set(data.map(e=>monthKey(e.fecha)))].sort();
+  const allYears = [...new Set(data.map(e=>e.fecha.slice(0,4)))].sort();
+  if(selectedYears){ selectedYears = selectedYears.filter(y=>allYears.includes(y)); if(selectedYears.length===0) selectedYears=null; }
+  const isTotal = !selectedYears;
+
+  document.getElementById('yearPickerBtn').textContent = (isTotal ? 'Tots els anys' : selectedYears.join(', ')) + ' ▾';
+  document.getElementById('yearPickerBtn').onclick = openYearPicker;
+
+  const periodData = isTotal ? data : data.filter(e=>selectedYears.includes(e.fecha.slice(0,4)));
+
+  // Build the exact list of months covered by the selection (clipped to where we have data),
+  // so gaps count as 0 for the average and the evolution chart shows only this period.
+  function monthRangeList(startMonth, endMonth){
+    const list = [];
+    let [y,m] = startMonth.split('-').map(Number);
+    const [ey,em] = endMonth.split('-').map(Number);
+    while(y<ey || (y===ey && m<=em)){
+      list.push(`${y}-${String(m).padStart(2,'0')}`);
+      m++; if(m>12){ m=1; y++; }
+    }
+    return list;
+  }
+  let monthsList;
+  if(isTotal){
+    monthsList = monthRangeList(allMonths[0], allMonths[allMonths.length-1]);
+  }else{
+    monthsList = [];
+    selectedYears.forEach(yr=>{
+      let start = yr+'-01', end = yr+'-12';
+      if(start < allMonths[0]) start = allMonths[0];
+      if(end > allMonths[allMonths.length-1]) end = allMonths[allMonths.length-1];
+      if(start > end) return;
+      monthsList.push(...monthRangeList(start, end));
+    });
+  }
+  const denom = monthsList.length || 1;
+
+  const total = periodData.reduce((s,e)=>s+Number(e.importe),0);
+  const avgTotal = total / denom;
+  document.getElementById('heroTotal').textContent = fmtMoney(avgTotal);
+  document.getElementById('donutCenterAmount').textContent = fmtMoney(avgTotal);
+  document.getElementById('heroCompare').textContent = `Mitjana mensual · basat en ${denom} mesos`;
+
+  // --- Category breakdown for the period, shown as per-month averages ---
+  const byCat = {};
+  periodData.forEach(e=>{ const c=e.categoria||'Sense categoritzar'; byCat[c]=(byCat[c]||0)+Number(e.importe); });
+  const catSorted = Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
+
+  document.getElementById('catListDash').innerHTML = catSorted.length ? catSorted.map(([cat,amt])=>{
+    const pct = total>0 ? (amt/total*100) : 0;
+    const color = catColor(cat);
+    return `<div class="catrow2" data-cat="${cat.replace(/"/g,'&quot;')}">
+      <div class="cicon" style="background:${color}22;">${iconFor(cat)}</div>
+      <div class="cinfo">
+        <div class="cname">${cat}</div>
+        <div class="cbar-wrap"><div class="cbar" style="width:${Math.max(2,pct)}%;background:${color};"></div></div>
+      </div>
+      <div class="camt"><div class="val">${fmtMoney(amt/denom)}</div><div class="pct">${pct.toFixed(0)}%</div></div>
+    </div>`;
+  }).join('') : '<div class="empty">Cap despesa en aquest període.</div>';
+  document.querySelectorAll('#catListDash .catrow2').forEach(row=>{
+    row.classList.toggle('active', row.dataset.cat === evoCategory);
+    row.onclick = () => { evoCategory = (evoCategory === row.dataset.cat) ? null : row.dataset.cat; renderDashboard(); };
+  });
+
+  if(charts.donut) charts.donut.destroy();
+  if(catSorted.length){
+    charts.donut = new Chart(document.getElementById('chartDonut'), {
+      type:'doughnut',
+      data:{ labels: catSorted.map(c=>c[0]), datasets:[{
+        data: catSorted.map(c=>c[1]/denom), backgroundColor: catSorted.map(c=>catColor(c[0])),
+        borderColor:'#16211c', borderWidth:3
+      }]},
+      options:{
+        responsive:true, maintainAspectRatio:false, cutout:'72%',
+        plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label:(ctx)=> ctx.label + ': ' + fmtMoney(ctx.parsed) } } }
+      }
+    });
+  }
+
+  // --- Bottom evolution panel: overall total, or the selected category ---
+  renderEvoChart(periodData, monthsList);
 }
 
 /* ============================================================
@@ -873,7 +1069,7 @@ async function runImport(){
   try{
     const chunkSize = 200;
     for(let i=0;i<toInsert.length;i+=chunkSize){
-      await sbPost('expenses', toInsert.slice(i,i+chunkSize), 'return=minimal,resolution=ignore-duplicates');
+      await sbPost('expenses?on_conflict=hash', toInsert.slice(i,i+chunkSize), 'return=minimal,resolution=ignore-duplicates');
     }
     toast(`${toInsert.length} moviments importats`);
     await ensureCategories(); await loadExpenses();
