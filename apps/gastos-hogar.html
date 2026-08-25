@@ -443,7 +443,7 @@ grant all on categories to anon;</pre>
   <div class="modal" id="modalBody"></div>
 </div>
 <div class="toast" id="toast"></div>
-<div style="position:fixed;bottom:4px;right:6px;font-size:9px;color:#a8a89c;z-index:999;pointer-events:none;">build-26</div>
+<div style="position:fixed;bottom:4px;right:6px;font-size:9px;color:#a8a89c;z-index:999;pointer-events:none;">build-28</div>
 
 <script>
 /* ============================================================
@@ -457,7 +457,7 @@ let importParsed = { sheets:{}, chosenSheets:[], rows:[], headers:[], mapping:{}
 let charts = {};
 
 const PALETTE = ['#c9a15a','#dd7860','#7ea888','#7ba7c9','#b98cc9','#c9c15a','#5ac9a1','#c95a8c','#a1785a','#5a8cc9','#c9785a','#8cc95a'];
-const DEFAULT_CATS = ['Hipoteca / Lloguer','Comunitat','Assegurança de la llar','Alarma','Gas','Llum','Aigua','Escombraries','Residus','Clavegueres','IBI',
+const DEFAULT_CATS = ['Hipoteca / Lloguer','Comunitat','Assegurança de la llar','Alarma','Gas','Llum','Aigua','Escombraries','Residus','Clavegueres','IBI i altres impostos',
   'Supermercat','Coses de casa','Neteja','Internet + TV','Gos','Cotxe','Benzina cotxe','Moto','Benzina moto','Revisions','Assegurança','Crèdit',
   'Oci','RENFE','Assegurança de vida','Pagaments','Sense categoritzar'];
 
@@ -630,7 +630,7 @@ document.getElementById('modalBg').addEventListener('click', e=>{ if(e.target.id
    ============================================================ */
 const CAT_ICONS = {
   'Hipoteca / Lloguer':'🏠','Comunitat':'🏢','Assegurança de la llar':'🛡️','Alarma':'🚨',
-  'Gas':'🔥','Llum':'💡','Aigua':'💧','Escombraries':'🗑️','Residus':'♻️','Clavegueres':'🚰','IBI':'🧾',
+  'Gas':'🔥','Llum':'💡','Aigua':'💧','Escombraries':'🗑️','Residus':'♻️','Clavegueres':'🚰','IBI i altres impostos':'🧾',
   'Supermercat':'🛒','Coses de casa':'🧺','Neteja':'🧹','Internet + TV':'📶','Gos':'🐕',
   'Benzina cotxe':'⛽','Assegurança cotxe':'🚙','Revisions cotxe':'🔧','Crèdit cotxe':'💳',
   'Benzina moto':'⛽','Assegurança moto':'🏍️','Revisions moto':'🔧','Crèdit moto':'💳',
@@ -918,9 +918,12 @@ function initImportar(){
   document.getElementById('btnImport').onclick = runImport;
 }
 function handleFile(file){
+  const isCsv = /\.csv$/i.test(file.name);
   const reader = new FileReader();
   reader.onload = (ev) => {
-    const wb = XLSX.read(ev.target.result, {type:'binary', cellDates:true});
+    const wb = isCsv
+      ? XLSX.read(ev.target.result, {type:'string', cellDates:true})
+      : XLSX.read(ev.target.result, {type:'binary', cellDates:true});
     importParsed.sheets = {};
     wb.SheetNames.forEach(name=>{
       const rows = XLSX.utils.sheet_to_json(wb.Sheets[name], {header:1, raw:true, blankrows:false});
@@ -933,7 +936,10 @@ function handleFile(file){
     }).join('');
     document.getElementById('importStep2').style.display='block';
   };
-  reader.readAsBinaryString(file);
+  // CSVs are plain text: read as UTF-8 text or accented characters get corrupted (Assegurança -> AsseguranÃ§a).
+  // Real .xlsx/.xls files are binary and must be read as binary string for SheetJS to parse them.
+  if(isCsv) reader.readAsText(file, 'UTF-8');
+  else reader.readAsBinaryString(file);
 }
 function guessCol(headers, keywords){
   const norm = h => (h||'').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
@@ -979,10 +985,19 @@ function showColumnMapping(){
   document.getElementById('importStep3').style.display='block';
 }
 function parseAmount(v){
-  if(typeof v === 'number') return Math.abs(v);
+  // Keeps the sign: positive = expense, negative = refund/credit (reduces the category total).
+  if(typeof v === 'number') return v;
   if(!v) return NaN;
-  const n = parseFloat(v.toString().replace(/\./g,'').replace(',', '.').replace(/[^0-9.\-]/g,''));
-  return isNaN(n) ? NaN : Math.abs(n);
+  let s = v.toString().trim().replace(/[^0-9.,\-]/g,'');
+  const lastComma = s.lastIndexOf(',');
+  const lastDot = s.lastIndexOf('.');
+  if(lastComma > lastDot){
+    s = s.replace(/\./g,'').replace(',', '.'); // comma is the decimal separator, dot was thousands
+  }else if(lastDot > lastComma){
+    s = s.replace(/,/g,''); // dot is the decimal separator, comma was thousands
+  }
+  const n = parseFloat(s);
+  return isNaN(n) ? NaN : n;
 }
 function parseDate(v){
   if(v instanceof Date) return v.toISOString().slice(0,10);
