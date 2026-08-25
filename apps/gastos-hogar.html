@@ -443,7 +443,7 @@ grant all on categories to anon;</pre>
   <div class="modal" id="modalBody"></div>
 </div>
 <div class="toast" id="toast"></div>
-<div style="position:fixed;bottom:4px;right:6px;font-size:9px;color:#a8a89c;z-index:999;pointer-events:none;">build-28</div>
+<div style="position:fixed;bottom:4px;right:6px;font-size:9px;color:#a8a89c;z-index:999;pointer-events:none;">build-29</div>
 
 <script>
 /* ============================================================
@@ -457,7 +457,7 @@ let importParsed = { sheets:{}, chosenSheets:[], rows:[], headers:[], mapping:{}
 let charts = {};
 
 const PALETTE = ['#c9a15a','#dd7860','#7ea888','#7ba7c9','#b98cc9','#c9c15a','#5ac9a1','#c95a8c','#a1785a','#5a8cc9','#c9785a','#8cc95a'];
-const DEFAULT_CATS = ['Hipoteca / Lloguer','Comunitat','Assegurança de la llar','Alarma','Gas','Llum','Aigua','Escombraries','Residus','Clavegueres','IBI i altres impostos',
+const DEFAULT_CATS = ['Hipoteca / Lloguer','Comunitat','Assegurança de la llar','Alarma','Gas','Llum','Aigua','Escombraries','Residus','Clavegueres','IBI',
   'Supermercat','Coses de casa','Neteja','Internet + TV','Gos','Cotxe','Benzina cotxe','Moto','Benzina moto','Revisions','Assegurança','Crèdit',
   'Oci','RENFE','Assegurança de vida','Pagaments','Sense categoritzar'];
 
@@ -630,7 +630,7 @@ document.getElementById('modalBg').addEventListener('click', e=>{ if(e.target.id
    ============================================================ */
 const CAT_ICONS = {
   'Hipoteca / Lloguer':'🏠','Comunitat':'🏢','Assegurança de la llar':'🛡️','Alarma':'🚨',
-  'Gas':'🔥','Llum':'💡','Aigua':'💧','Escombraries':'🗑️','Residus':'♻️','Clavegueres':'🚰','IBI i altres impostos':'🧾',
+  'Gas':'🔥','Llum':'💡','Aigua':'💧','Escombraries':'🗑️','Residus':'♻️','Clavegueres':'🚰','IBI':'🧾',
   'Supermercat':'🛒','Coses de casa':'🧺','Neteja':'🧹','Internet + TV':'📶','Gos':'🐕',
   'Benzina cotxe':'⛽','Assegurança cotxe':'🚙','Revisions cotxe':'🔧','Crèdit cotxe':'💳',
   'Benzina moto':'⛽','Assegurança moto':'🏍️','Revisions moto':'🔧','Crèdit moto':'💳',
