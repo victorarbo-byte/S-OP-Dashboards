@@ -226,6 +226,15 @@
   .catrow2 .camt .val{font-family:'IBM Plex Mono',monospace;font-size:14px;}
   .catrow2 .camt .pct{font-size:11px;color:var(--muted);margin-top:2px;}
 
+  .catgroup{border-bottom:1px solid var(--line);}
+  .catgroup:last-child{border-bottom:none;}
+  .catrow2.group{border-bottom:none;cursor:pointer;}
+  .catrow2.group .expand-arrow{color:var(--muted);font-size:11px;margin-left:4px;}
+  .catgroup-children{padding-left:20px;border-top:1px dashed var(--line);}
+  .catrow2.sub{padding:10px 0;cursor:pointer;}
+  .catrow2.sub .cicon.small{width:30px;height:30px;font-size:14px;border-radius:9px;}
+  .catrow2.sub .cname{font-size:13px;}
+
   .topbar{
     display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-bottom:18px;
   }
@@ -443,7 +452,7 @@ grant all on categories to anon;</pre>
   <div class="modal" id="modalBody"></div>
 </div>
 <div class="toast" id="toast"></div>
-<div style="position:fixed;bottom:4px;right:6px;font-size:9px;color:#a8a89c;z-index:999;pointer-events:none;">build-29</div>
+<div style="position:fixed;bottom:4px;right:6px;font-size:9px;color:#a8a89c;z-index:999;pointer-events:none;">build-31</div>
 
 <script>
 /* ============================================================
@@ -460,6 +469,16 @@ const PALETTE = ['#c9a15a','#dd7860','#7ea888','#7ba7c9','#b98cc9','#c9c15a','#5
 const DEFAULT_CATS = ['Hipoteca / Lloguer','Comunitat','Assegurança de la llar','Alarma','Gas','Llum','Aigua','Escombraries','Residus','Clavegueres','IBI',
   'Supermercat','Coses de casa','Neteja','Internet + TV','Gos','Cotxe','Benzina cotxe','Moto','Benzina moto','Revisions','Assegurança','Crèdit',
   'Oci','RENFE','Assegurança de vida','Pagaments','Sense categoritzar'];
+
+const GROUP_FOR_DEFAULT = {
+  'Hipoteca / Lloguer':'Hipoteca / Lloguer','Comunitat':'Hipoteca / Lloguer',
+  'Assegurança de la llar':'Assegurances','Assegurança de vida':'Assegurances','Assegurança cotxe':'Assegurances','Assegurança moto':'Assegurances','Assegurança':'Assegurances',
+  'Alarma':'Subministraments','Gas':'Subministraments','Llum':'Subministraments','Aigua':'Subministraments','Neteja':'Subministraments','Internet + TV':'Subministraments','Benzina cotxe':'Subministraments','Benzina moto':'Subministraments',
+  'Escombraries':'Impostos','Residus':'Impostos','Clavegueres':'Impostos','IBI':'Impostos',
+  'Supermercat':'Compres','Coses de casa':'Compres','Gos':'Compres',
+  'Oci':'Oci',
+  'Cotxe':'Altres','Moto':'Altres','Revisions':'Altres','Revisions cotxe':'Altres','Revisions moto':'Altres','Crèdit':'Altres','Crèdit cotxe':'Altres','Crèdit moto':'Altres','RENFE':'Altres','Pagaments':'Altres','Sense categoritzar':'Altres'
+};
 
 /* ============================================================
    SETUP / CONNECT
@@ -573,7 +592,7 @@ async function boot(){
 async function ensureCategories(){
   categories = await sbGet('categories?order=orden.asc');
   if(categories.length === 0){
-    const seed = DEFAULT_CATS.map((n,i)=>({nombre:n, color:PALETTE[i%PALETTE.length], orden:i}));
+    const seed = DEFAULT_CATS.map((n,i)=>({nombre:n, color:PALETTE[i%PALETTE.length], orden:i, grupo:GROUP_FOR_DEFAULT[n]||'Altres'}));
     await sbPost('categories', seed, 'return=minimal');
     categories = await sbGet('categories?order=orden.asc');
   }
@@ -638,6 +657,13 @@ const CAT_ICONS = {
 };
 function iconFor(cat){ return CAT_ICONS[cat] || '🏷️'; }
 
+const GROUP_ICONS = { 'Hipoteca / Lloguer':'🏠', 'Assegurances':'🛡️', 'Subministraments':'🔌', 'Impostos':'🧾', 'Compres':'🛒', 'Oci':'🎉', 'Altres':'📦' };
+const GROUP_COLORS = { 'Hipoteca / Lloguer':'#b8863f', 'Assegurances':'#7ba7c9', 'Subministraments':'#4f8a5f', 'Impostos':'#c85f47', 'Compres':'#b98cc9', 'Oci':'#5a8cc9', 'Altres':'#8c7ba0' };
+function catGroup(cat){
+  const c = categories.find(c=>c.nombre===cat);
+  return (c && c.grupo) ? c.grupo : 'Altres';
+}
+
 let selectedYears = null; // null = all years; otherwise array of 'YYYY' strings
 let yearsDefaultApplied = false; // ensures the 2026-by-default only kicks in once, not after the user changes it
 
@@ -676,12 +702,11 @@ function openYearPicker(){
   };
 }
 
-let evoCategory = null; // null = overall total; otherwise a category name
+let evoSelection = null; // null = whole period; {type:'cat', value} or {type:'group', value}
+let expandedGroups = new Set();
 
-function renderEvoChart(data, months){
-  document.getElementById('evoTitle').textContent = evoCategory
-    ? `${iconFor(evoCategory)} Evolució: ${evoCategory}`
-    : 'Evolució del període';
+function renderEvoChart(filteredData, months, title, color){
+  document.getElementById('evoTitle').textContent = title;
 
   if(!months || months.length===0){
     document.getElementById('evoAvgKpi').textContent = '–';
@@ -689,15 +714,14 @@ function renderEvoChart(data, months){
     return;
   }
 
-  const filtered = evoCategory ? data.filter(e => (e.categoria||'Sense categoritzar') === evoCategory) : data;
   const byMonth = {};
-  filtered.forEach(e=>{ const mk = monthKey(e.fecha); byMonth[mk] = (byMonth[mk]||0) + Number(e.importe); });
+  filteredData.forEach(e=>{ const mk = monthKey(e.fecha); byMonth[mk] = (byMonth[mk]||0) + Number(e.importe); });
 
   const total = months.reduce((s,mo)=>s+(byMonth[mo]||0), 0);
   document.getElementById('evoAvgKpi').textContent = fmtMoney(total / months.length);
 
   const values = months.map(mo=>byMonth[mo]||0);
-  const dataColor = evoCategory ? catColor(evoCategory) : '#b8863f';
+  const dataColor = color || '#b8863f';
   const fmtShort = v => v>=1000 ? (v/1000).toLocaleString('ca-ES',{maximumFractionDigits:1})+'k' : Math.round(v);
 
   document.getElementById('evoChartWrap').style.minWidth = months.length > 14 ? (months.length*36)+'px' : '100%';
@@ -786,30 +810,80 @@ function renderDashboard(){
   document.getElementById('heroTotal').textContent = fmtMoney(avgTotal);
   document.getElementById('heroCompare').textContent = `Mitjana mensual · basat en ${denom} mesos`;
 
-  // --- Category breakdown for the period, shown as per-month averages ---
+  // --- Category breakdown for the period, grouped into a first layer (Casa/Cotxe/Moto/Oci/Altres) ---
   const byCat = {};
   periodData.forEach(e=>{ const c=e.categoria||'Sense categoritzar'; byCat[c]=(byCat[c]||0)+Number(e.importe); });
-  const catSorted = Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
 
-  document.getElementById('catListDash').innerHTML = catSorted.length ? catSorted.map(([cat,amt])=>{
-    const pct = total>0 ? (amt/total*100) : 0;
-    const color = catColor(cat);
-    return `<div class="catrow2" data-cat="${cat.replace(/"/g,'&quot;')}">
-      <div class="cicon" style="background:${color}22;">${iconFor(cat)}</div>
-      <div class="cinfo">
-        <div class="cname">${cat}</div>
-        <div class="cbar-wrap"><div class="cbar" style="width:${Math.max(2,pct)}%;background:${color};"></div></div>
+  const byGroup = {};
+  Object.entries(byCat).forEach(([cat,amt])=>{
+    const g = catGroup(cat);
+    if(!byGroup[g]) byGroup[g] = { total:0, cats:[] };
+    byGroup[g].total += amt;
+    byGroup[g].cats.push([cat,amt]);
+  });
+  const groupsSorted = Object.entries(byGroup).sort((a,b)=>b[1].total-a[1].total);
+  groupsSorted.forEach(([,info])=>info.cats.sort((a,b)=>b[1]-a[1]));
+
+  document.getElementById('catListDash').innerHTML = groupsSorted.length ? groupsSorted.map(([group,info])=>{
+    const pct = total>0 ? (info.total/total*100) : 0;
+    const color = GROUP_COLORS[group] || '#8c7ba0';
+    const expanded = expandedGroups.has(group);
+    const isActiveGroup = evoSelection && evoSelection.type==='group' && evoSelection.value===group;
+    const childrenHtml = info.cats.map(([cat,amt])=>{
+      const cpct = total>0 ? (amt/total*100) : 0;
+      const ccolor = catColor(cat);
+      const isActiveCat = evoSelection && evoSelection.type==='cat' && evoSelection.value===cat;
+      return `<div class="catrow2 sub${isActiveCat?' active':''}" data-cat="${cat.replace(/"/g,'&quot;')}">
+        <div class="cicon small" style="background:${ccolor}22;">${iconFor(cat)}</div>
+        <div class="cinfo">
+          <div class="cname">${cat}</div>
+          <div class="cbar-wrap"><div class="cbar" style="width:${Math.max(2,cpct)}%;background:${ccolor};"></div></div>
+        </div>
+        <div class="camt"><div class="val">${fmtMoney(amt/denom)}</div><div class="pct">${cpct.toFixed(0)}%</div></div>
+      </div>`;
+    }).join('');
+    return `<div class="catgroup">
+      <div class="catrow2 group${isActiveGroup?' active':''}" data-group="${group}">
+        <div class="cicon" style="background:${color}22;">${GROUP_ICONS[group]||'📦'}</div>
+        <div class="cinfo">
+          <div class="cname">${group} <span class="expand-arrow">${expanded?'▾':'▸'}</span></div>
+          <div class="cbar-wrap"><div class="cbar" style="width:${Math.max(2,pct)}%;background:${color};"></div></div>
+        </div>
+        <div class="camt"><div class="val">${fmtMoney(info.total/denom)}</div><div class="pct">${pct.toFixed(0)}%</div></div>
       </div>
-      <div class="camt"><div class="val">${fmtMoney(amt/denom)}</div><div class="pct">${pct.toFixed(0)}%</div></div>
+      <div class="catgroup-children" style="display:${expanded?'block':'none'};">${childrenHtml}</div>
     </div>`;
   }).join('') : '<div class="empty">Cap despesa en aquest període.</div>';
-  document.querySelectorAll('#catListDash .catrow2').forEach(row=>{
-    row.classList.toggle('active', row.dataset.cat === evoCategory);
-    row.onclick = () => { evoCategory = (evoCategory === row.dataset.cat) ? null : row.dataset.cat; renderDashboard(); };
+
+  document.querySelectorAll('#catListDash .catrow2.group').forEach(row=>{
+    row.onclick = () => {
+      const g = row.dataset.group;
+      if(expandedGroups.has(g)) expandedGroups.delete(g); else expandedGroups.add(g);
+      evoSelection = (evoSelection && evoSelection.type==='group' && evoSelection.value===g) ? null : {type:'group', value:g};
+      renderDashboard();
+    };
+  });
+  document.querySelectorAll('#catListDash .catrow2.sub').forEach(row=>{
+    row.onclick = (ev) => {
+      ev.stopPropagation();
+      const c = row.dataset.cat;
+      evoSelection = (evoSelection && evoSelection.type==='cat' && evoSelection.value===c) ? null : {type:'cat', value:c};
+      renderDashboard();
+    };
   });
 
-  // --- Evolution panel: overall total, or the selected category ---
-  renderEvoChart(periodData, monthsList);
+  // --- Evolution panel: overall total, or the selected group/category ---
+  let evoData = periodData, evoTitle = 'Evolució del període', evoColor = '#b8863f';
+  if(evoSelection && evoSelection.type==='cat'){
+    evoData = periodData.filter(e => (e.categoria||'Sense categoritzar') === evoSelection.value);
+    evoTitle = `${iconFor(evoSelection.value)} Evolució: ${evoSelection.value}`;
+    evoColor = catColor(evoSelection.value);
+  }else if(evoSelection && evoSelection.type==='group'){
+    evoData = periodData.filter(e => catGroup(e.categoria||'Sense categoritzar') === evoSelection.value);
+    evoTitle = `${GROUP_ICONS[evoSelection.value]||'📦'} Evolució: ${evoSelection.value}`;
+    evoColor = GROUP_COLORS[evoSelection.value] || '#8c7ba0';
+  }
+  renderEvoChart(evoData, monthsList, evoTitle, evoColor);
 }
 
 /* ============================================================
