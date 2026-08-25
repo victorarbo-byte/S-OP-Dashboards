@@ -340,18 +340,6 @@ grant all on categories to anon;</pre>
         <div class="hero-compare" id="heroCompare"></div>
       </div>
 
-      <div class="donutzone">
-        <div class="donutwrap">
-          <canvas id="chartDonut"></canvas>
-          <div class="donut-center">
-            <div class="donut-center-label">Mitjana/mes</div>
-            <div class="donut-center-amount" id="donutCenterAmount">–</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="catlist2" id="catListDash"></div>
-
       <div class="panel">
         <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;">
           <h3 id="evoTitle" style="margin:0;">Evolució del total</h3>
@@ -369,6 +357,8 @@ grant all on categories to anon;</pre>
           </div>
         </div>
       </div>
+
+      <div class="catlist2" id="catListDash"></div>
     </section>
 
     <!-- ---------- MOVIMIENTOS ---------- -->
@@ -453,7 +443,7 @@ grant all on categories to anon;</pre>
   <div class="modal" id="modalBody"></div>
 </div>
 <div class="toast" id="toast"></div>
-<div style="position:fixed;bottom:4px;right:6px;font-size:9px;color:#a8a89c;z-index:999;pointer-events:none;">build-25</div>
+<div style="position:fixed;bottom:4px;right:6px;font-size:9px;color:#a8a89c;z-index:999;pointer-events:none;">build-26</div>
 
 <script>
 /* ============================================================
@@ -746,9 +736,7 @@ function renderDashboard(){
     document.getElementById('heroTotal').textContent = '–';
     document.getElementById('heroCompare').textContent = '';
     document.getElementById('yearPickerBtn').textContent = 'Tots els anys ▾';
-    document.getElementById('donutCenterAmount').textContent = '–';
     document.getElementById('catListDash').innerHTML = '<div class="empty">Encara no hi ha moviments. Vés a Importar o afegeix-ne un manualment.</div>';
-    if(charts.donut) charts.donut.destroy();
     return;
   }
 
@@ -796,7 +784,6 @@ function renderDashboard(){
   const total = periodData.reduce((s,e)=>s+Number(e.importe),0);
   const avgTotal = total / denom;
   document.getElementById('heroTotal').textContent = fmtMoney(avgTotal);
-  document.getElementById('donutCenterAmount').textContent = fmtMoney(avgTotal);
   document.getElementById('heroCompare').textContent = `Mitjana mensual · basat en ${denom} mesos`;
 
   // --- Category breakdown for the period, shown as per-month averages ---
@@ -821,22 +808,7 @@ function renderDashboard(){
     row.onclick = () => { evoCategory = (evoCategory === row.dataset.cat) ? null : row.dataset.cat; renderDashboard(); };
   });
 
-  if(charts.donut) charts.donut.destroy();
-  if(catSorted.length){
-    charts.donut = new Chart(document.getElementById('chartDonut'), {
-      type:'doughnut',
-      data:{ labels: catSorted.map(c=>c[0]), datasets:[{
-        data: catSorted.map(c=>c[1]/denom), backgroundColor: catSorted.map(c=>catColor(c[0])),
-        borderColor:'#ffffff', borderWidth:3
-      }]},
-      options:{
-        responsive:true, maintainAspectRatio:false, cutout:'72%',
-        plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label:(ctx)=> ctx.label + ': ' + fmtMoney(ctx.parsed) } } }
-      }
-    });
-  }
-
-  // --- Bottom evolution panel: overall total, or the selected category ---
+  // --- Evolution panel: overall total, or the selected category ---
   renderEvoChart(periodData, monthsList);
 }
 
