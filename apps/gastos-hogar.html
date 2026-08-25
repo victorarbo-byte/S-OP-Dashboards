@@ -10,16 +10,16 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   :root{
-    --bg:#0f1613;
-    --surface:#16211c;
-    --surface-2:#1c2922;
-    --line:#28362f;
-    --text:#eef3ef;
-    --muted:#8fa39a;
-    --gold:#c9a15a;
-    --coral:#dd7860;
-    --sage:#7ea888;
-    --danger:#c95a5a;
+    --bg:#f5f3ef;
+    --surface:#ffffff;
+    --surface-2:#eeece5;
+    --line:#ddd8cd;
+    --text:#242820;
+    --muted:#6e7a6a;
+    --gold:#b8863f;
+    --coral:#c85f47;
+    --sage:#4f8a5f;
+    --danger:#b23a3a;
   }
   *{box-sizing:border-box;}
   body{
@@ -31,7 +31,7 @@
   }
   h1,h2,h3,.serif{font-family:'Fraunces',serif;}
   .mono{font-family:'IBM Plex Mono',monospace;}
-  ::selection{background:var(--gold);color:#0f1613;}
+  ::selection{background:var(--gold);color:#fff;}
 
   /* ---------- Setup screen ---------- */
   #setup{
@@ -53,7 +53,7 @@
     font-family:'Inter',sans-serif;cursor:pointer;border:none;border-radius:8px;
     padding:10px 16px;font-size:14px;font-weight:600;
   }
-  .btn-primary{background:var(--gold);color:#1a1408;}
+  .btn-primary{background:var(--gold);color:#fff;}
   .btn-primary:hover{filter:brightness(1.08);}
   .btn-primary:disabled{opacity:.5;cursor:default;}
   .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--line);}
@@ -63,8 +63,8 @@
   details.help{margin-top:18px;font-size:13px;color:var(--muted);}
   details.help summary{cursor:pointer;color:var(--gold);}
   details.help pre{
-    background:#0c110e;padding:12px;border-radius:8px;overflow-x:auto;font-size:11.5px;
-    line-height:1.5;margin-top:10px;color:#c8d6cf;
+    background:#2a2f26;padding:12px;border-radius:8px;overflow-x:auto;font-size:11.5px;
+    line-height:1.5;margin-top:10px;color:#3a4136;
   }
 
   /* ---------- App shell ---------- */
@@ -181,7 +181,7 @@
   .monthnav-label{font-family:'Fraunces',serif;font-size:19px;min-width:150px;text-align:center;text-transform:capitalize;cursor:pointer;}
   .yearpicker-btn{
     background:var(--surface);border:1px solid var(--line);color:var(--text);
-    padding:9px 18px;border-radius:20px;font-family:'Fraunces',serif;font-size:16px;cursor:pointer;
+    padding:9px 18px;border-radius:20px;font-family:'Inter',sans-serif;font-weight:600;font-size:14px;cursor:pointer;
   }
   .yearpicker-btn:active{background:var(--surface-2);}
 
@@ -191,7 +191,7 @@
     padding:9px 16px;border-radius:20px;font-size:14px;font-weight:500;
     font-family:'IBM Plex Mono',monospace;
   }
-  .yearchip.selected{background:var(--gold);border-color:var(--gold);color:#1a1408;font-weight:600;}
+  .yearchip.selected{background:var(--gold);border-color:var(--gold);color:#fff;font-weight:600;}
   .yearchip:active{opacity:.8;}
 
   .hero{text-align:center;margin-bottom:20px;}
@@ -453,7 +453,7 @@ grant all on categories to anon;</pre>
   <div class="modal" id="modalBody"></div>
 </div>
 <div class="toast" id="toast"></div>
-<div style="position:fixed;bottom:4px;right:6px;font-size:9px;color:#556058;z-index:999;pointer-events:none;">build-22</div>
+<div style="position:fixed;bottom:4px;right:6px;font-size:9px;color:#a8a89c;z-index:999;pointer-events:none;">build-25</div>
 
 <script>
 /* ============================================================
@@ -467,7 +467,7 @@ let importParsed = { sheets:{}, chosenSheets:[], rows:[], headers:[], mapping:{}
 let charts = {};
 
 const PALETTE = ['#c9a15a','#dd7860','#7ea888','#7ba7c9','#b98cc9','#c9c15a','#5ac9a1','#c95a8c','#a1785a','#5a8cc9','#c9785a','#8cc95a'];
-const DEFAULT_CATS = ['Lloguer','Hipoteca','Comunitat','Assegurança de la llar','Alarma','Gas','Llum','Aigua','Escombraries','Residus','Clavegueres','IBI',
+const DEFAULT_CATS = ['Hipoteca / Lloguer','Comunitat','Assegurança de la llar','Alarma','Gas','Llum','Aigua','Escombraries','Residus','Clavegueres','IBI',
   'Supermercat','Coses de casa','Neteja','Internet + TV','Gos','Cotxe','Benzina cotxe','Moto','Benzina moto','Revisions','Assegurança','Crèdit',
   'Oci','RENFE','Assegurança de vida','Pagaments','Sense categoritzar'];
 
@@ -601,7 +601,7 @@ function toast(msg){
   clearTimeout(t._h); t._h = setTimeout(()=>t.style.display='none', 2600);
 }
 function fmtMoney(n){
-  return (n<0?'-':'') + Math.abs(n).toLocaleString('ca-ES',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' €';
+  return (n<0?'-':'') + Math.round(Math.abs(n)).toLocaleString('ca-ES',{minimumFractionDigits:0,maximumFractionDigits:0}) + ' €';
 }
 function monthKey(dateStr){ return dateStr.slice(0,7); }
 function monthLabel(key){
@@ -639,7 +639,7 @@ document.getElementById('modalBg').addEventListener('click', e=>{ if(e.target.id
    DASHBOARD
    ============================================================ */
 const CAT_ICONS = {
-  'Lloguer':'🏠','Hipoteca':'🏦','Comunitat':'🏢','Assegurança de la llar':'🛡️','Alarma':'🚨',
+  'Hipoteca / Lloguer':'🏠','Comunitat':'🏢','Assegurança de la llar':'🛡️','Alarma':'🚨',
   'Gas':'🔥','Llum':'💡','Aigua':'💧','Escombraries':'🗑️','Residus':'♻️','Clavegueres':'🚰','IBI':'🧾',
   'Supermercat':'🛒','Coses de casa':'🧺','Neteja':'🧹','Internet + TV':'📶','Gos':'🐕',
   'Benzina cotxe':'⛽','Assegurança cotxe':'🚙','Revisions cotxe':'🔧','Crèdit cotxe':'💳',
@@ -707,7 +707,7 @@ function renderEvoChart(data, months){
   document.getElementById('evoAvgKpi').textContent = fmtMoney(total / months.length);
 
   const values = months.map(mo=>byMonth[mo]||0);
-  const dataColor = evoCategory ? catColor(evoCategory) : '#c9a15a';
+  const dataColor = evoCategory ? catColor(evoCategory) : '#b8863f';
   const fmtShort = v => v>=1000 ? (v/1000).toLocaleString('ca-ES',{maximumFractionDigits:1})+'k' : Math.round(v);
 
   document.getElementById('evoChartWrap').style.minWidth = months.length > 14 ? (months.length*36)+'px' : '100%';
@@ -719,11 +719,11 @@ function renderEvoChart(data, months){
     options:{
       responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
       scales:{
-        x:{ticks:{color:'#8fa39a',font:{size:10}},grid:{display:false}},
+        x:{ticks:{color:'#6e7a6a',font:{size:10}},grid:{display:false}},
         y:{
           beginAtZero:true,
           ticks:{ display:false },
-          grid:{ display:true, color:'#28362f', drawTicks:false }
+          grid:{ display:true, color:'#e3ddd0', drawTicks:false }
         }
       }
     }
@@ -735,7 +735,7 @@ function renderEvoChart(data, months){
   const axisEl = document.getElementById('evoAxisLabels');
   axisEl.innerHTML = yScale.ticks.map(t => {
     const py = yScale.getPixelForValue(t.value);
-    return `<div style="position:absolute;top:${py-7}px;right:8px;font-size:11px;font-family:'IBM Plex Mono',monospace;color:#c8d6cf;">${fmtShort(t.value)}</div>`;
+    return `<div style="position:absolute;top:${py-7}px;right:8px;font-size:11px;font-family:'IBM Plex Mono',monospace;color:#3a4136;">${fmtShort(t.value)}</div>`;
   }).join('');
 }
 
@@ -827,7 +827,7 @@ function renderDashboard(){
       type:'doughnut',
       data:{ labels: catSorted.map(c=>c[0]), datasets:[{
         data: catSorted.map(c=>c[1]/denom), backgroundColor: catSorted.map(c=>catColor(c[0])),
-        borderColor:'#16211c', borderWidth:3
+        borderColor:'#ffffff', borderWidth:3
       }]},
       options:{
         responsive:true, maintainAspectRatio:false, cutout:'72%',
